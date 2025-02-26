@@ -57,4 +57,11 @@ export const CameraTarget = defineComponent({
   offsetX: Types.f32,
   offsetY: Types.f32,
   deadZoneRadius: Types.f32
+});
+
+// Projectile component - for player shots
+export const Projectile = defineComponent({
+  targetX: Types.f32,
+  targetY: Types.f32,
+  lifeTime: Types.f32  // How long the projectile exists in ms
 }); 

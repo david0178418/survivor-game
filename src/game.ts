@@ -1,10 +1,16 @@
 import { Application, Graphics, Ticker } from 'pixi.js';
-import { createWorld } from 'bitecs';
+import { createWorld, defineQuery } from 'bitecs';
 import { createPlayer } from './entities/player';
 import { movementSystem } from './systems/movement';
 import { cameraSystem } from './systems/camera';
 import { boundarySystem } from './systems/boundary';
 import { renderSystem } from './systems/render';
+import { spawnSystem } from './systems/spawn';
+import { enemyAISystem } from './systems/enemyAI';
+import { shootingSystem } from './systems/shooting';
+import { collisionSystem } from './systems/collision';
+import { Enemy } from './entities/enemy';
+import { Projectile } from './components';
 
 // Create the ECS world
 const world = createWorld();
@@ -15,7 +21,8 @@ const gameState = {
     up: false,
     down: false,
     left: false,
-    right: false
+    right: false,
+    shoot: false
   },
   camera: {
     x: 0,
@@ -26,6 +33,10 @@ const gameState = {
     height: 2000
   }
 };
+
+// Define queries to count entities
+const enemyQuery = defineQuery([Enemy]);
+const projectileQuery = defineQuery([Projectile]);
 
 // Initialize PIXI Application
 const app = new Application();
@@ -106,6 +117,9 @@ function setupInputHandlers() {
       case 'arrowright':
         gameState.input.right = true;
         break;
+      case ' ': // Spacebar for shooting
+        gameState.input.shoot = true;
+        break;
     }
   });
 
@@ -127,6 +141,9 @@ function setupInputHandlers() {
       case 'arrowright':
         gameState.input.right = false;
         break;
+      case ' ': // Spacebar for shooting
+        gameState.input.shoot = false;
+        break;
     }
   });
   
@@ -138,8 +155,18 @@ function setupInputHandlers() {
 
 // Main game loop
 function gameLoop(ticker: Ticker) {
+  const delta = ticker.deltaMS;
+  
+  // Get current entity counts
+  const enemyCount = enemyQuery(world).length;
+  const projectileCount = projectileQuery(world).length;
+  
   // Run systems
-  movementSystem(world, gameState, ticker.deltaMS);
+  movementSystem(world, gameState, delta);
+  shootingSystem(world, gameState, delta, true);
+  spawnSystem(world, delta, enemyCount);
+  enemyAISystem(world, delta);
+  collisionSystem(world);
   boundarySystem(world, gameState.mapSize);
   cameraSystem(world, gameState, app);
   renderSystem(world, app);
