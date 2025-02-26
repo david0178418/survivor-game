@@ -1,0 +1,19 @@
+{
+  "name": "survivor-game",
+  "module": "index.html",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun --hot index.html"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "bitecs": "^0.3.40",
+    "pixi.js": "^8.8.0"
+  }
+}
