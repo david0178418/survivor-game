@@ -7,10 +7,19 @@ import { getPlayerLevel } from './collectible';
 // Define a query to get the player entity
 const playerQuery = defineQuery([Player, Position, Experience]);
 
+// Base spawn rate configuration (easily editable)
+const SPAWN_CONFIG = {
+  BASE_MIN_TIME: 1, // Minimum spawn time in seconds
+  BASE_RANDOM_VARIANCE: 0.75, // Random variance added to min time
+  LEVEL_REDUCTION_PERCENT: 0.08, // 8% faster spawn per level
+  MIN_MULTIPLIER: 0.4, // Minimum spawn time multiplier (won't go lower than 40% of base)
+};
+
 // Track spawn timing
 let timeSinceLastSpawn = 0;
-// Faster spawn interval: reduced by half (2x spawn rate)
-let nextSpawnTime = (0.4 + Math.random() * 0.75) * 1000; // Was 0.8-2.3 seconds, now 0.4-1.15 seconds
+// Initialize with base spawn time calculation
+let nextSpawnTime = (SPAWN_CONFIG.BASE_MIN_TIME + Math.random() * SPAWN_CONFIG.BASE_RANDOM_VARIANCE) * 1000;
+
 // Base maximum number of enemies on screen
 const BASE_MAX_ENEMIES = 30;
 
@@ -46,8 +55,10 @@ export function spawnSystem(world: any, delta: number, enemyCount: number) {
 	const playerY = Position.y[playerId];
 
 	// Calculate spawn frequency based on player level (spawn faster at higher levels)
-	// Increased rate: 8% faster per level (up from 5%), down to 40% of original time (down from 50%)
-	const spawnFrequencyMultiplier = Math.max(0.4, 1.0 - (playerLevel * 0.08));
+	const spawnFrequencyMultiplier = Math.max(
+		SPAWN_CONFIG.MIN_MULTIPLIER, 
+		1.0 - (playerLevel * SPAWN_CONFIG.LEVEL_REDUCTION_PERCENT)
+	);
 
 	// Update timer
 	timeSinceLastSpawn += delta;
@@ -59,8 +70,9 @@ export function spawnSystem(world: any, delta: number, enemyCount: number) {
 
 		// Reset spawn timer
 		timeSinceLastSpawn = 0;
-		// Set random interval for next spawn, scaled by player level
-		nextSpawnTime = (0.4 + Math.random() * 0.75) * 1000 * spawnFrequencyMultiplier;
+		
+		// Calculate next spawn time using base values and level multiplier
+		nextSpawnTime = (SPAWN_CONFIG.BASE_MIN_TIME + Math.random() * SPAWN_CONFIG.BASE_RANDOM_VARIANCE) * 1000 * spawnFrequencyMultiplier;
 	}
 
 	return world;

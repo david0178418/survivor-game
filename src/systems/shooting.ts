@@ -10,7 +10,7 @@ const projectileQuery = defineQuery([Projectile, Position]);
 
 // Track shooting cooldown
 let shootCooldown = 0;
-const SHOOT_COOLDOWN_TIME = 300; // 300ms between shots
+const SHOOT_COOLDOWN_TIME = 1_250; // 1s between shots
 
 /**
  * System for handling projectile shooting and movement
