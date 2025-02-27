@@ -4,7 +4,7 @@
 
 [commit dd5e538](https://github.com/david0178418/survivor-game/commit/dd5e53803b7d5fcc7c4b5a2776aa095a649979a7)
 
-## Response
+## Prompt
 
 > Make the enemies drop collecables that the player can pick up.
 
