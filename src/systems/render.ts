@@ -1,5 +1,5 @@
-import { defineQuery } from 'bitecs';
-import { Position, Render } from '../components';
+import { defineQuery, hasComponent } from 'bitecs';
+import { Position, Render, Invincible, Player } from '../components';
 import { Application, Graphics } from 'pixi.js';
 
 // Define a query to get all renderable entities
@@ -33,6 +33,14 @@ export function renderSystem(world: any, app: Application) {
 
 		// Update the graphic
 		graphic.clear();
+
+		// Set alpha based on invincibility (if entity is a player)
+		if (hasComponent(world, Player, entity) && hasComponent(world, Invincible, entity)) {
+			graphic.alpha = Invincible.duration[entity] > 0 ? 0.5 : 1.0;
+		} else {
+			graphic.alpha = 1.0;
+		}
+
 		graphic.beginFill(color);
 		graphic.drawRect(-width / 2, -height / 2, width, height);
 		graphic.endFill();

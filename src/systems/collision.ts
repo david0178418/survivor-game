@@ -1,5 +1,5 @@
 import { defineQuery, removeEntity, hasComponent } from 'bitecs';
-import { Position, Render, Projectile, Health, Damage, Player, Experience } from '../components';
+import { Position, Render, Projectile, Health, Damage, Player, Experience, Invincible } from '../components';
 import { Enemy } from '../entities/enemy';
 import { createCollectible, getRandomCollectibleType, shouldBeLargeCollectible } from '../entities/collectible';
 import { getPlayerLevel } from './collectible';
@@ -7,10 +7,13 @@ import { getPlayerLevel } from './collectible';
 // Define queries for collision detection
 const projectileQuery = defineQuery([Projectile, Position, Render, Damage]);
 const enemyQuery = defineQuery([Enemy, Position, Render, Health]);
-const playerQuery = defineQuery([Player, Position, Render, Health, Experience]);
+const playerQuery = defineQuery([Player, Position, Render, Health, Experience, Invincible]);
 
 // Drop rate for collectibles from enemies
 const COLLECTIBLE_DROP_CHANCE = 0.4; // 40% chance to drop an item
+
+// Invincibility duration in milliseconds
+const INVINCIBILITY_DURATION = 500; // 0.5 seconds
 
 export function collisionSystem(world: any) {
 	// Get all projectiles and enemies
@@ -74,42 +77,50 @@ export function collisionSystem(world: any) {
 		}
 	}
 
-	// Check enemy collisions with player
-	for (const enemy of enemies) {
-		const enemyX = Position.x[enemy];
-		const enemyY = Position.y[enemy];
-		const enemyWidth = Render.width[enemy];
-		const enemyHeight = Render.height[enemy];
-		const enemyDamage = hasComponent(world, Damage, enemy) ? Damage.amount[enemy] : 2; // Default to 2 damage
+	// Check enemy collisions with player only if not invincible
+	if (Invincible.duration[player] <= 0) {
+		for (const enemy of enemies) {
+			const enemyX = Position.x[enemy];
+			const enemyY = Position.y[enemy];
+			const enemyWidth = Render.width[enemy];
+			const enemyHeight = Render.height[enemy];
+			const enemyDamage = hasComponent(world, Damage, enemy) ? Damage.amount[enemy] : 2; // Default to 2 damage
 
-		const playerX = Position.x[player];
-		const playerY = Position.y[player];
-		const playerWidth = Render.width[player];
-		const playerHeight = Render.height[player];
+			const playerX = Position.x[player];
+			const playerY = Position.y[player];
+			const playerWidth = Render.width[player];
+			const playerHeight = Render.height[player];
 
-		// Simple AABB collision detection
-		const collisionX = Math.abs(playerX - enemyX) < (playerWidth + enemyWidth) / 2;
-		const collisionY = Math.abs(playerY - enemyY) < (playerHeight + enemyHeight) / 2;
+			// Simple AABB collision detection
+			const collisionX = Math.abs(playerX - enemyX) < (playerWidth + enemyWidth) / 2;
+			const collisionY = Math.abs(playerY - enemyY) < (playerHeight + enemyHeight) / 2;
 
-		// If collision detected
-		if (collisionX && collisionY) {
-			// Damage the player
-			Health.current[player] -= enemyDamage;
+			// If collision detected
+			if (collisionX && collisionY) {
+				// Damage the player
+				Health.current[player] -= enemyDamage;
 
-			// Save position before destroying enemy
-			const enemyPosX = Position.x[enemy];
-			const enemyPosY = Position.y[enemy];
+				// Start invincibility timer
+				Invincible.duration[player] = INVINCIBILITY_DURATION;
 
-			// Destroy the enemy
-			removeEntity(world, enemy);
+				// Save position before destroying enemy
+				const enemyPosX = Position.x[enemy];
+				const enemyPosY = Position.y[enemy];
 
-			// Chance to spawn a collectible at the enemy's position
-			if (Math.random() < COLLECTIBLE_DROP_CHANCE) {
-				const collectibleType = getRandomCollectibleType();
-				const isLarge = shouldBeLargeCollectible(playerLevel);
-				createCollectible(world, enemyPosX, enemyPosY, collectibleType, isLarge);
+				// Destroy the enemy
+				removeEntity(world, enemy);
+
+				// Chance to spawn a collectible at the enemy's position
+				if (Math.random() < COLLECTIBLE_DROP_CHANCE) {
+					const collectibleType = getRandomCollectibleType();
+					const isLarge = shouldBeLargeCollectible(playerLevel);
+					createCollectible(world, enemyPosX, enemyPosY, collectibleType, isLarge);
+				}
 			}
 		}
+	} else {
+		// Decrease invincibility duration
+		Invincible.duration[player] -= 16.67; // Roughly one frame at 60fps
 	}
 
 	return world;

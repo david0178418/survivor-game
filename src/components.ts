@@ -97,3 +97,8 @@ export const Experience = defineComponent({
 	current: Types.ui32,  // Current XP
 	nextLevel: Types.ui32  // XP required for next level
 });
+
+// Invincible component - for tracking invincibility frames
+export const Invincible = defineComponent({
+	duration: Types.f32  // How long invincibility lasts in ms
+});
