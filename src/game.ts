@@ -1,5 +1,5 @@
 import { Application, Graphics, Ticker, Text } from 'pixi.js';
-import { createWorld, defineQuery, deleteWorld } from 'bitecs';
+import { createWorld, defineQuery, deleteWorld, hasComponent } from 'bitecs';
 import { createPlayer } from './entities/player';
 import { movementSystem } from './systems/movement';
 import { cameraSystem } from './systems/camera';
@@ -9,8 +9,9 @@ import { spawnSystem } from './systems/spawn';
 import { enemyAISystem } from './systems/enemyAI';
 import { shootingSystem } from './systems/shooting';
 import { collisionSystem, isPlayerDead } from './systems/collision';
+import { collectibleSystem } from './systems/collectible';
 import { Enemy } from './entities/enemy';
-import { Projectile, Player, Health } from './components';
+import { Projectile, Player, Health, Collectible, Velocity } from './components';
 
 // Create the ECS world
 let world = createWorld();
@@ -38,12 +39,16 @@ const gameState = {
 const enemyQuery = defineQuery([Enemy]);
 const projectileQuery = defineQuery([Projectile]);
 const playerQuery = defineQuery([Player, Health]);
+const collectibleQuery = defineQuery([Collectible]);
 
 // Initialize PIXI Application
 const app = new Application();
 
 // UI elements
 let healthText: Text;
+let speedText: Text;
+let damageText: Text;
+let statsContainer: Graphics;
 
 // Game initialization
 async function init() {
@@ -58,16 +63,16 @@ async function init() {
 
   // Add the canvas to the document
   document.body.appendChild(app.canvas);
-  
+
   // Initialize the game world
   initializeGame();
-  
+
   // Setup input handlers
   setupInputHandlers();
-  
+
   // Create UI elements
   createUI();
-  
+
   // Start the game loop
   app.ticker.add(gameLoop);
 }
@@ -76,7 +81,7 @@ async function init() {
 function initializeGame() {
   // Create game entities
   createPlayer(world);
-  
+
   // Create boundary walls
   createBoundaries(world, gameState.mapSize);
 }
@@ -86,14 +91,14 @@ function resetGame() {
   // Clear the old world and create a new one
   deleteWorld(world);
   world = createWorld();
-  
+
   // Reset game state (keep input state)
   gameState.camera.x = 0;
   gameState.camera.y = 0;
-  
+
   // Initialize the new game
   initializeGame();
-  
+
   console.log("Game reset: Player died");
 }
 
@@ -101,58 +106,116 @@ function resetGame() {
 function createBoundaries(world: any, mapSize: { width: number, height: number }) {
   const { width, height } = mapSize;
   const wallThickness = 20;
-  
+
   // Create the container for all walls
   const wallsContainer = new Graphics();
   app.stage.addChild(wallsContainer);
-  
+
   wallsContainer.beginFill(0x000000); // Black walls
-  
+
   // Top wall
   wallsContainer.drawRect(0, 0, width, wallThickness);
-  
+
   // Bottom wall
   wallsContainer.drawRect(0, height - wallThickness, width, wallThickness);
-  
+
   // Left wall
   wallsContainer.drawRect(0, 0, wallThickness, height);
-  
+
   // Right wall
   wallsContainer.drawRect(width - wallThickness, 0, wallThickness, height);
-  
+
   wallsContainer.endFill();
-  
+
   return wallsContainer;
 }
 
 // Create UI elements
 function createUI() {
+  // Create a semi-transparent container for stats
+  statsContainer = new Graphics();
+  statsContainer.beginFill(0x000000, 0.5);
+  statsContainer.drawRect(0, 0, 200, 100);
+  statsContainer.endFill();
+  statsContainer.x = 10;
+  statsContainer.y = 10;
+
+  app.stage.addChild(statsContainer);
+
   // Health display
   healthText = new Text('Health: 10 / 10', {
     fontFamily: 'Arial',
-    fontSize: 24,
-    fill: 0xFF0000,
+    fontSize: 16,
+    fill: 0xFFFFFF,
     align: 'left'
   });
-  
-  healthText.x = 10;
-  healthText.y = 10;
+
+  healthText.x = 20;
+  healthText.y = 20;
   healthText.resolution = 2;
-  healthText.zIndex = 100;
-  
   app.stage.addChild(healthText);
+
+  // Speed display
+  speedText = new Text('Speed: 0.5', {
+    fontFamily: 'Arial',
+    fontSize: 16,
+    fill: 0xFFFFFF,
+    align: 'left'
+  });
+
+  speedText.x = 20;
+  speedText.y = 45;
+  speedText.resolution = 2;
+  app.stage.addChild(speedText);
+
+  // Damage display
+  damageText = new Text('Damage: 1', {
+    fontFamily: 'Arial',
+    fontSize: 16,
+    fill: 0xFFFFFF,
+    align: 'left'
+  });
+
+  damageText.x = 20;
+  damageText.y = 70;
+  damageText.resolution = 2;
+  app.stage.addChild(damageText);
 }
 
-// Update health UI
-function updateHealthUI(world: any) {
+// Update UI
+function updateUI(world: any) {
   const players = playerQuery(world);
   if (players.length === 0) return;
-  
+
   const player = players[0];
+
+  // Update health display
   const currentHealth = Health.current[player];
   const maxHealth = Health.max[player];
-  
   healthText.text = `Health: ${currentHealth} / ${maxHealth}`;
+
+  // Update speed display
+  if (hasComponent(world, Velocity, player)) {
+    const speed = Velocity.speed[player].toFixed(1);
+    speedText.text = `Speed: ${speed}`;
+  }
+
+  // Damage is updated from the collectible system
+  // We just need to reflect the current value
+  damageText.text = `Damage: ${1 + Math.floor(getPlayerDamageBoost())}`;
+
+  // Make sure UI follows camera
+  statsContainer.x = gameState.camera.x + 10;
+  statsContainer.y = gameState.camera.y + 10;
+
+  healthText.x = gameState.camera.x + 20;
+  healthText.y = gameState.camera.y + 20;
+
+  speedText.x = gameState.camera.x + 20;
+  speedText.y = gameState.camera.y + 45;
+
+  damageText.x = gameState.camera.x + 20;
+  damageText.y = gameState.camera.y + 70;
 }
 
 // Setup input handlers
@@ -205,7 +268,7 @@ function setupInputHandlers() {
         break;
     }
   });
-  
+
   // Handle window resize
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
@@ -215,30 +278,34 @@ function setupInputHandlers() {
 // Main game loop
 function gameLoop(ticker: Ticker) {
   const delta = ticker.deltaMS;
-  
+
   // Get current entity counts
   const enemyCount = enemyQuery(world).length;
-  const projectileCount = projectileQuery(world).length;
-  
+  const collectibleCount = collectibleQuery(world).length;
+
   // Check if player is dead
   if (isPlayerDead(world)) {
     resetGame();
     return;
   }
-  
+
   // Update UI
-  updateHealthUI(world);
-  
+  updateUI(world);
+
   // Run systems
   movementSystem(world, gameState, delta);
   shootingSystem(world, gameState, delta, true);
   spawnSystem(world, delta, enemyCount);
   enemyAISystem(world, delta);
+  collectibleSystem(world, delta);
   collisionSystem(world);
   boundarySystem(world, gameState.mapSize);
   cameraSystem(world, gameState, app);
   renderSystem(world, app);
 }
+
+// Import for damage boost function
+import { getPlayerDamageBoost } from './systems/collectible';
 
 // Start the game
 init().catch(console.error);

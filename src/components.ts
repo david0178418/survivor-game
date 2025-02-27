@@ -76,3 +76,10 @@ export const Health = defineComponent({
 export const Damage = defineComponent({
   amount: Types.i32
 });
+
+// Collectible component - for items that can be picked up
+export const Collectible = defineComponent({
+  type: Types.ui8,  // 0 = health, 1 = speed, 2 = damage boost, etc.
+  value: Types.f32,  // How much value the collectible provides
+  lifeTime: Types.f32  // How long the collectible exists in ms
+});
