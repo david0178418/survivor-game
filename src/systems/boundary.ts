@@ -1,19 +1,17 @@
 import { defineQuery, removeEntity } from 'bitecs';
 import { Position, Player, Render, Projectile } from '../components';
 import { Enemy } from '../entities/enemy';
+import { getMapBoundaries } from './map';
+import type { World, MapSize } from '../types';
 
 // Define queries for entities that need boundary constraints
 const playerQuery = defineQuery([Position, Player, Render]);
 const enemyQuery = defineQuery([Position, Enemy, Render]);
 const projectileQuery = defineQuery([Position, Projectile, Render]);
 
-export function boundarySystem(world: any, mapSize: { width: number, height: number }) {
-	// Set up the wall boundaries (including wall thickness)
-	const wallThickness = 20;
-	const minX = wallThickness;
-	const minY = wallThickness;
-	const maxX = mapSize.width - wallThickness;
-	const maxY = mapSize.height - wallThickness;
+export function boundarySystem(world: World, mapSize: MapSize) {
+	// Get the map boundaries
+	const { minX, minY, maxX, maxY } = getMapBoundaries(mapSize);
 
 	// Process all entities that need boundary constraints
 	const processEntity = (entity: number, destroy: boolean = false) => {
@@ -63,5 +61,5 @@ export function boundarySystem(world: any, mapSize: { width: number, height: num
 		processEntity(entity, true);
 	}
 
-  return world;
+	return world;
 }

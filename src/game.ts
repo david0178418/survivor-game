@@ -1,5 +1,5 @@
-import { Application, Graphics, Ticker, Text } from 'pixi.js';
-import { createWorld, defineQuery, deleteWorld, hasComponent } from 'bitecs';
+import { Application, Ticker } from 'pixi.js';
+import { createWorld, defineQuery, deleteWorld } from 'bitecs';
 import { createPlayer } from './entities/player';
 import { movementSystem } from './systems/movement';
 import { cameraSystem } from './systems/camera';
@@ -10,10 +10,13 @@ import { enemyAISystem } from './systems/enemyAI';
 import { shootingSystem } from './systems/shooting';
 import { collisionSystem, isPlayerDead } from './systems/collision';
 import { collectibleSystem } from './systems/collectible';
+import { createUI, uiSystem } from './systems/ui';
+import { setupInputHandlers, inputSystem } from './systems/input';
+import { createBoundaries } from './systems/map';
 import { Enemy } from './entities/enemy';
-import { Projectile, Player, Health, Collectible, Velocity, PickupRange } from './components';
+import { Projectile, Player, Health, Collectible } from './components';
 import type { World, GameState, Entity } from './types';
-import { MAP, UI } from './constants';
+import { MAP } from './constants';
 
 // Create the ECS world
 let world = createWorld() as World;
@@ -47,13 +50,6 @@ const collectibleQuery = defineQuery([Collectible]);
 // Initialize PIXI Application
 const app = new Application();
 
-// UI elements
-let healthText: Text;
-let speedText: Text;
-let damageText: Text;
-let rangeText: Text;
-let statsContainer: Graphics;
-
 // Game initialization
 async function init() {
 	// Initialize PIXI app
@@ -72,10 +68,10 @@ async function init() {
 	initializeGame();
 
 	// Setup input handlers
-	setupInputHandlers();
+	setupInputHandlers(gameState, app);
 
 	// Create UI elements
-	createUI();
+	createUI(app);
 
 	// Start the game loop
 	app.ticker.add(gameLoop);
@@ -87,7 +83,7 @@ function initializeGame() {
 	createPlayer(world);
 
 	// Create boundary walls
-	createBoundaries(world, gameState.mapSize);
+	createBoundaries(world, app, gameState.mapSize);
 }
 
 // Reset the game
@@ -106,211 +102,17 @@ function resetGame() {
 	console.log("Game reset: Player died");
 }
 
-// Create boundary walls
-function createBoundaries(world: World, mapSize: { width: number, height: number }) {
-	const { width, height } = mapSize;
-	const wallThickness = MAP.WALL_THICKNESS;
-
-	// Create the container for all walls
-	const wallsContainer = new Graphics();
-	app.stage.addChild(wallsContainer);
-
-	wallsContainer.beginFill(0x000000); // Black walls
-
-	// Top wall
-	wallsContainer.drawRect(0, 0, width, wallThickness);
-
-	// Bottom wall
-	wallsContainer.drawRect(0, height - wallThickness, width, wallThickness);
-
-	// Left wall
-	wallsContainer.drawRect(0, 0, wallThickness, height);
-
-	// Right wall
-	wallsContainer.drawRect(width - wallThickness, 0, wallThickness, height);
-
-	wallsContainer.endFill();
-
-	return wallsContainer;
-}
-
-// Create UI elements
-function createUI() {
-	// Create a semi-transparent container for stats
-	statsContainer = new Graphics();
-	statsContainer.beginFill(
-		UI.STATS_PANEL.BACKGROUND_COLOR,
-		UI.STATS_PANEL.BACKGROUND_ALPHA
-	);
-	statsContainer.drawRect(
-		0, 0,
-		UI.STATS_PANEL.WIDTH,
-		UI.STATS_PANEL.HEIGHT
-	);
-	statsContainer.endFill();
-	statsContainer.x = UI.STATS_PANEL.X_OFFSET;
-	statsContainer.y = UI.STATS_PANEL.Y_OFFSET;
-
-	app.stage.addChild(statsContainer);
-
-	// Health display
-	healthText = new Text('Health: 10 / 10', {
-		fontFamily: UI.TEXT.FONT_FAMILY,
-		fontSize: UI.TEXT.FONT_SIZE,
-		fill: UI.TEXT.COLOR,
-		align: 'left'
-	});
-
-	healthText.x = UI.TEXT.X_OFFSET;
-	healthText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET;
-	healthText.resolution = UI.TEXT.RESOLUTION;
-	app.stage.addChild(healthText);
-
-	// Speed display
-	speedText = new Text('Speed: 0.5', {
-		fontFamily: UI.TEXT.FONT_FAMILY,
-		fontSize: UI.TEXT.FONT_SIZE,
-		fill: UI.TEXT.COLOR,
-		align: 'left'
-	});
-
-	speedText.x = UI.TEXT.X_OFFSET;
-	speedText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING;
-	speedText.resolution = UI.TEXT.RESOLUTION;
-	app.stage.addChild(speedText);
-
-	// Damage display
-	damageText = new Text('Damage: 1', {
-		fontFamily: UI.TEXT.FONT_FAMILY,
-		fontSize: UI.TEXT.FONT_SIZE,
-		fill: UI.TEXT.COLOR,
-		align: 'left'
-	});
-
-	damageText.x = UI.TEXT.X_OFFSET;
-	damageText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 2;
-	damageText.resolution = UI.TEXT.RESOLUTION;
-	app.stage.addChild(damageText);
-
-	// Range display
-	rangeText = new Text('Pickup Range: 150', {
-		fontFamily: UI.TEXT.FONT_FAMILY,
-		fontSize: UI.TEXT.FONT_SIZE,
-		fill: UI.TEXT.COLOR,
-		align: 'left'
-	});
-
-	rangeText.x = UI.TEXT.X_OFFSET;
-	rangeText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 3;
-	rangeText.resolution = UI.TEXT.RESOLUTION;
-	app.stage.addChild(rangeText);
-}
-
-// Update UI
-function updateUI(world: World) {
-	const players = playerQuery(world);
-	if (players.length === 0) return;
-
-	const player = players[0];
-
-	// Update health display
-	const currentHealth = Health.current[player];
-	const maxHealth = Health.max[player];
-	healthText.text = `Health: ${currentHealth} / ${maxHealth}`;
-
-	// Update speed display
-	if (hasComponent(world, Velocity, player)) {
-		const speed = Velocity.speed[player].toFixed(1);
-		speedText.text = `Speed: ${speed}`;
-	}
-
-	// Damage is updated from the collectible system
-	// We just need to reflect the current value
-	damageText.text = `Damage: ${1 + Math.floor(getPlayerDamageBoost())}`;
-
-	// Update pickup range display
-	if (hasComponent(world, PickupRange, player)) {
-		const range = Math.round(PickupRange.radius[player]);
-		rangeText.text = `Pickup Range: ${range}`;
-	}
-
-	// Make sure UI follows camera
-	statsContainer.x = gameState.camera.x + UI.STATS_PANEL.X_OFFSET;
-	statsContainer.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET;
-
-	healthText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
-	healthText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET;
-
-	speedText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
-	speedText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING;
-
-	damageText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
-	damageText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 2;
-
-	rangeText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
-	rangeText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 3;
-}
-
-// Setup input handlers
-function setupInputHandlers() {
-	// Keyboard handling
-	window.addEventListener('keydown', (e) => {
-		switch (e.key.toLowerCase()) {
-			case 'w':
-			case 'arrowup':
-				gameState.input.up = true;
-				break;
-			case 's':
-			case 'arrowdown':
-				gameState.input.down = true;
-				break;
-			case 'a':
-			case 'arrowleft':
-				gameState.input.left = true;
-				break;
-			case 'd':
-			case 'arrowright':
-				gameState.input.right = true;
-				break;
-			case ' ': // Spacebar for shooting
-				gameState.input.shoot = true;
-				break;
-		}
-	});
-
-	window.addEventListener('keyup', (e) => {
-		switch (e.key.toLowerCase()) {
-			case 'w':
-			case 'arrowup':
-				gameState.input.up = false;
-				break;
-			case 's':
-			case 'arrowdown':
-				gameState.input.down = false;
-				break;
-			case 'a':
-			case 'arrowleft':
-				gameState.input.left = false;
-				break;
-			case 'd':
-			case 'arrowright':
-				gameState.input.right = false;
-				break;
-			case ' ': // Spacebar for shooting
-				gameState.input.shoot = false;
-				break;
-		}
-	});
-
-	// Handle window resize
-	window.addEventListener('resize', () => {
-		app.renderer.resize(window.innerWidth, window.innerHeight);
-	});
-}
-
 // Main game loop
 function gameLoop(ticker: Ticker) {
 	const delta = ticker.deltaMS;
+
+	// Process inputs
+	inputSystem(gameState);
+
+	// If game is paused, skip remaining updates
+	if (gameState.paused) {
+		return;
+	}
 
 	// Get current entity counts
 	const enemyCount = enemyQuery(world).length;
@@ -322,9 +124,6 @@ function gameLoop(ticker: Ticker) {
 		return;
 	}
 
-	// Update UI
-	updateUI(world);
-
 	// Run systems
 	movementSystem(world, gameState, delta);
 	shootingSystem(world, gameState, delta, true);
@@ -333,12 +132,10 @@ function gameLoop(ticker: Ticker) {
 	collectibleSystem(world, delta);
 	collisionSystem(world);
 	boundarySystem(world, gameState.mapSize);
+	uiSystem(world, gameState);
 	cameraSystem(world, gameState, app);
 	renderSystem(world, app);
 }
-
-// Import for damage boost function
-import { getPlayerDamageBoost } from './systems/collectible';
 
 // Start the game
 init().catch(console.error);
