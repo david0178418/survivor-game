@@ -12,7 +12,14 @@ const projectileQuery = defineQuery([Projectile, Position]);
 let shootCooldown = 0;
 const SHOOT_COOLDOWN_TIME = 300; // 300ms between shots
 
-export function shootingSystem(world: any, gameState: any, delta: number, shoot: boolean) {
+/**
+ * System for handling projectile shooting and movement
+ *
+ * @param world The game world
+ * @param delta Time since last frame in milliseconds
+ * @returns The updated world
+ */
+export function shootingSystem(world: any, delta: number): any {
 	// Update cooldown
 	if (shootCooldown > 0) {
 		shootCooldown -= delta;

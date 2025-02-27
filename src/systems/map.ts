@@ -1,16 +1,25 @@
 import { Application, Graphics } from 'pixi.js';
 import { MAP } from '../constants';
-import type { World, MapSize } from '../types';
+import type { MapSize } from '../types';
+
+/**
+ * Map boundary description
+ */
+export interface MapBoundaries {
+	minX: number;
+	minY: number;
+	maxX: number;
+	maxY: number;
+}
 
 /**
  * Creates boundary walls around the map
  *
- * @param world The ECS world
  * @param app The PIXI Application
  * @param mapSize The size of the map
  * @returns The container with wall graphics
  */
-export function createBoundaries(world: World, app: Application, mapSize: MapSize) {
+export function createBoundaries(app: Application, mapSize: MapSize): Graphics {
 	const { width, height } = mapSize;
 	const wallThickness = MAP.WALL_THICKNESS;
 
@@ -43,7 +52,7 @@ export function createBoundaries(world: World, app: Application, mapSize: MapSiz
  * @param mapSize The size of the map
  * @returns The map boundaries
  */
-export function getMapBoundaries(mapSize: MapSize) {
+export function getMapBoundaries(mapSize: MapSize): MapBoundaries {
 	return {
 		minX: MAP.WALL_THICKNESS,
 		minY: MAP.WALL_THICKNESS,

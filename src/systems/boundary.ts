@@ -2,19 +2,31 @@ import { defineQuery, removeEntity } from 'bitecs';
 import { Position, Player, Render, Projectile } from '../components';
 import { Enemy } from '../entities/enemy';
 import { getMapBoundaries } from './map';
-import type { World, MapSize } from '../types';
+import type { World, MapSize, Entity } from '../types';
 
 // Define queries for entities that need boundary constraints
 const playerQuery = defineQuery([Position, Player, Render]);
 const enemyQuery = defineQuery([Position, Enemy, Render]);
 const projectileQuery = defineQuery([Position, Projectile, Render]);
 
-export function boundarySystem(world: World, mapSize: MapSize) {
+/**
+ * System for handling entity boundary constraints
+ *
+ * @param world The ECS world
+ * @param mapSize The size of the map
+ * @returns The updated world
+ */
+export function boundarySystem(world: World, mapSize: MapSize): World {
 	// Get the map boundaries
 	const { minX, minY, maxX, maxY } = getMapBoundaries(mapSize);
 
-	// Process all entities that need boundary constraints
-	const processEntity = (entity: number, destroy: boolean = false) => {
+	/**
+	 * Process an entity for boundary constraints
+	 *
+	 * @param entity The entity to process
+	 * @param destroy Whether to destroy the entity if it's outside boundaries
+	 */
+	const processEntity = (entity: Entity, destroy = false): void => {
 		const width = Render.width[entity];
 		const height = Render.height[entity];
 

@@ -14,12 +14,11 @@ import { createUI, uiSystem } from './systems/ui';
 import { setupInputHandlers, inputSystem } from './systems/input';
 import { createBoundaries } from './systems/map';
 import { Enemy } from './entities/enemy';
-import { Projectile, Player, Health, Collectible } from './components';
-import type { World, GameState, Entity } from './types';
+import type { World, GameState } from './types';
 import { MAP } from './constants';
 
 // Create the ECS world
-let world = createWorld() as World;
+const world: World = createWorld();
 
 // Game state
 const gameState: GameState = {
@@ -43,15 +42,14 @@ const gameState: GameState = {
 
 // Define queries to count entities
 const enemyQuery = defineQuery([Enemy]);
-const projectileQuery = defineQuery([Projectile]);
-const playerQuery = defineQuery([Player, Health]);
-const collectibleQuery = defineQuery([Collectible]);
 
 // Initialize PIXI Application
 const app = new Application();
 
-// Game initialization
-async function init() {
+/**
+ * Game initialization
+ */
+async function init(): Promise<void> {
 	// Initialize PIXI app
 	await app.init({
 		width: window.innerWidth,
@@ -77,20 +75,24 @@ async function init() {
 	app.ticker.add(gameLoop);
 }
 
-// Initialize a new game
-function initializeGame() {
+/**
+ * Initialize a new game
+ */
+function initializeGame(): void {
 	// Create game entities
 	createPlayer(world);
 
 	// Create boundary walls
-	createBoundaries(world, app, gameState.mapSize);
+	createBoundaries(app, gameState.mapSize);
 }
 
-// Reset the game
-function resetGame() {
+/**
+ * Reset the game
+ */
+function resetGame(): void {
 	// Clear the old world and create a new one
 	deleteWorld(world);
-	world = createWorld() as World;
+	Object.assign(world, createWorld());
 
 	// Reset game state (keep input state)
 	gameState.camera.x = 0;
@@ -102,8 +104,10 @@ function resetGame() {
 	console.log("Game reset: Player died");
 }
 
-// Main game loop
-function gameLoop(ticker: Ticker) {
+/**
+ * Main game loop
+ */
+function gameLoop(ticker: Ticker): void {
 	const delta = ticker.deltaMS;
 
 	// Process inputs
@@ -116,7 +120,6 @@ function gameLoop(ticker: Ticker) {
 
 	// Get current entity counts
 	const enemyCount = enemyQuery(world).length;
-	const collectibleCount = collectibleQuery(world).length;
 
 	// Check if player is dead
 	if (isPlayerDead(world)) {
@@ -126,7 +129,7 @@ function gameLoop(ticker: Ticker) {
 
 	// Run systems
 	movementSystem(world, gameState, delta);
-	shootingSystem(world, gameState, delta, true);
+	shootingSystem(world, delta);
 	spawnSystem(world, delta, enemyCount);
 	enemyAISystem(world, delta);
 	collectibleSystem(world, delta);
@@ -138,4 +141,4 @@ function gameLoop(ticker: Ticker) {
 }
 
 // Start the game
-init().catch(console.error);
+init().catch((error: Error) => console.error(error));

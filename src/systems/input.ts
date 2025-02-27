@@ -6,9 +6,9 @@ import type { GameState } from '../types';
  * @param gameState Reference to the game state to update
  * @param app PIXI Application instance (for window resize handling)
  */
-export function setupInputHandlers(gameState: GameState, app: Application) {
+export function setupInputHandlers(gameState: GameState, app: Application): void {
 	// Keyboard handling
-	window.addEventListener('keydown', (e) => {
+	window.addEventListener('keydown', (e: KeyboardEvent): void => {
 		switch (e.key.toLowerCase()) {
 			case 'w':
 			case 'arrowup':
@@ -35,7 +35,7 @@ export function setupInputHandlers(gameState: GameState, app: Application) {
 		}
 	});
 
-	window.addEventListener('keyup', (e) => {
+	window.addEventListener('keyup', (e: KeyboardEvent): void => {
 		switch (e.key.toLowerCase()) {
 			case 'w':
 			case 'arrowup':
@@ -60,7 +60,7 @@ export function setupInputHandlers(gameState: GameState, app: Application) {
 	});
 
 	// Handle window resize
-	window.addEventListener('resize', () => {
+	window.addEventListener('resize', (): void => {
 		app.renderer.resize(window.innerWidth, window.innerHeight);
 	});
 }
@@ -68,8 +68,11 @@ export function setupInputHandlers(gameState: GameState, app: Application) {
 /**
  * Process input for the current frame (currently just a stub)
  * This could be used for more complex input processing in the future
+ *
+ * @param gameState The game state to process input for
+ * @returns The updated game state
  */
-export function inputSystem(gameState: GameState) {
+export function inputSystem(gameState: GameState): GameState {
 	// For now, there's nothing more to do here as we directly update gameState
 	// But in the future we could add more logic (like input buffering, combos, etc.)
 	return gameState;

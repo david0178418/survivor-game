@@ -19,10 +19,6 @@ export function collectibleSystem(world: any, delta: number) {
 	if (players.length === 0) return world; // No player active
 
 	const player = players[0];
-	const playerX = Position.x[player];
-	const playerY = Position.y[player];
-	const playerWidth = Render.width[player];
-	const playerHeight = Render.height[player];
 
 	// Get player's pickup range
 	const pickupRadius = PickupRange.radius[player];

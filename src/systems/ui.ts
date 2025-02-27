@@ -19,7 +19,7 @@ let statsContainer: Graphics;
  * Initialize UI elements
  * @param app PIXI Application instance
  */
-export function createUI(app: Application) {
+export function createUI(app: Application): void {
 	// Create a semi-transparent container for stats
 	statsContainer = new Graphics();
 	statsContainer.beginFill(
@@ -94,8 +94,9 @@ export function createUI(app: Application) {
  * Update UI based on player stats and game state
  * @param world ECS world
  * @param gameState Current game state
+ * @returns The updated world
  */
-export function uiSystem(world: World, gameState: GameState) {
+export function uiSystem(world: World, gameState: GameState): World {
 	const players = playerQuery(world);
 	if (players.length === 0) return world;
 
