@@ -18,3 +18,4 @@ And I game dev expriment. Implementing a simple Brotato-style game using bitECS 
 			This was just setting the basic movement. I'd actually tried this a few times and kept coming up with..._interesting_ results. I finally decided to go ahead and start with a hair more direction. This included overcoming some stale knowledge that it consistently tripped over regarding the initialization of a Pixi app.
 	- [And projectiles](./conversation/conversation-2-36f2655.md)
 	- [Health and game restart](./conversation/conversation-3-76ea286.md)
+	- [Enemy drops](./conversation/conversation-4-dd5e538.md)
