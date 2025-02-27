@@ -97,3 +97,13 @@ export const Experience = defineComponent({
 	current: Types.ui32,  // Current XP
 	nextLevel: Types.ui32  // XP required for next level
 });
+
+// Invincibility component - for entities that have temporary invincibility
+export const Invincibility = defineComponent({
+	duration: Types.f32  // Duration of invincibility in ms
+});
+
+// Opacity component - for entities that have adjustable opacity
+export const Opacity = defineComponent({
+	value: Types.f32  // Opacity value (0.0 to 1.0)
+});

@@ -1,6 +1,6 @@
 import { addEntity, addComponent } from 'bitecs';
-import { Position, Velocity, Player, Render, CameraTarget, Health, PickupRange, Experience } from '../components';
-import { PLAYER, EXPERIENCE } from '../constants';
+import { Position, Velocity, Player, Render, CameraTarget, Health, PickupRange, Experience, Invincibility, Opacity } from '../components';
+import { PLAYER, EXPERIENCE, INVINCIBILITY_DURATION } from '../constants';
 
 export function createPlayer(world: any) {
 	// Create a new entity
@@ -47,6 +47,14 @@ export function createPlayer(world: any) {
 	Experience.level[player] = EXPERIENCE.STARTING_LEVEL;
 	Experience.current[player] = 0;
 	Experience.nextLevel[player] = EXPERIENCE.BASE_XP_FOR_LEVEL;
+
+	// Add Invincibility component
+	addComponent(world, Invincibility, player);
+	Invincibility.duration[player] = 0;
+
+	// Add Opacity component
+	addComponent(world, Opacity, player);
+	Opacity.value[player] = 1.0;
 
 	return player;
 }

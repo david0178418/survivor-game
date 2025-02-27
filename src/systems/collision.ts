@@ -1,13 +1,14 @@
-import { defineQuery, removeEntity, hasComponent } from 'bitecs';
-import { Position, Render, Projectile, Health, Damage, Player, Experience } from '../components';
+import { defineQuery, removeEntity, hasComponent, addComponent } from 'bitecs';
+import { Position, Render, Projectile, Health, Damage, Player, Experience, Invincibility, Opacity } from '../components';
 import { Enemy } from '../entities/enemy';
 import { createCollectible, getRandomCollectibleType, shouldBeLargeCollectible } from '../entities/collectible';
 import { getPlayerLevel } from './collectible';
+import { INVINCIBILITY_DURATION } from '../constants';
 
 // Define queries for collision detection
 const projectileQuery = defineQuery([Projectile, Position, Render, Damage]);
 const enemyQuery = defineQuery([Enemy, Position, Render, Health]);
-const playerQuery = defineQuery([Player, Position, Render, Health, Experience]);
+const playerQuery = defineQuery([Player, Position, Render, Health, Experience, Invincibility, Opacity]);
 
 // Drop rate for collectibles from enemies
 const COLLECTIBLE_DROP_CHANCE = 0.4; // 40% chance to drop an item
@@ -93,8 +94,17 @@ export function collisionSystem(world: any) {
 
 		// If collision detected
 		if (collisionX && collisionY) {
-			// Damage the player
-			Health.current[player] -= enemyDamage;
+			// Check if player is invincible
+			if (Invincibility.duration[player] <= 0) {
+				// Damage the player
+				Health.current[player] -= enemyDamage;
+
+				// Add invincibility to player
+				Invincibility.duration[player] = INVINCIBILITY_DURATION;
+
+				// Reduce player opacity to 50%
+				Opacity.value[player] = 0.5;
+			}
 
 			// Save position before destroying enemy
 			const enemyPosX = Position.x[enemy];

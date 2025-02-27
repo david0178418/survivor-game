@@ -1,5 +1,5 @@
-import { defineQuery } from 'bitecs';
-import { Position, Velocity, Player } from '../components';
+import { defineQuery, removeComponent } from 'bitecs';
+import { Position, Velocity, Player, Invincibility } from '../components';
 
 // Define a query to get all entities with Position, Velocity, and Player components
 const playerQuery = defineQuery([Position, Velocity, Player]);
@@ -45,6 +45,14 @@ export function movementSystem(world: any, gameState: any, delta: number) {
 		// Apply velocity to position
 		Position.x[entity] += Velocity.x[entity] * Velocity.speed[entity] * delta;
 		Position.y[entity] += Velocity.y[entity] * Velocity.speed[entity] * delta;
+
+		// Decrease Invincibility duration by delta each frame
+		if (Invincibility.duration[entity] > 0) {
+			Invincibility.duration[entity] -= delta;
+			if (Invincibility.duration[entity] <= 0) {
+				removeComponent(world, Invincibility, entity);
+			}
+		}
 	}
 
 	return world;

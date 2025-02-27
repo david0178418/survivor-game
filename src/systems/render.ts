@@ -1,5 +1,5 @@
 import { defineQuery } from 'bitecs';
-import { Position, Render } from '../components';
+import { Position, Render, Opacity, Invincibility } from '../components';
 import { Application, Graphics } from 'pixi.js';
 
 // Define a query to get all renderable entities
@@ -40,6 +40,13 @@ export function renderSystem(world: any, app: Application) {
 		// Set position
 		graphic.x = x;
 		graphic.y = y;
+
+		// Set opacity based on Invincibility component
+		if (hasComponent(world, Invincibility, entity)) {
+			graphic.alpha = Opacity.value[entity];
+		} else {
+			graphic.alpha = 1.0;
+		}
 	}
 
 	// Clean up removed entities

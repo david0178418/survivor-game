@@ -1,4 +1,4 @@
-// Game map settings
+ // Game map settings
 export const MAP = {
 	WIDTH: 2000,
 	HEIGHT: 2000,
@@ -97,3 +97,6 @@ export const UI = {
 		X_OFFSET: 20
 	}
 };
+
+// Invincibility duration constant
+export const INVINCIBILITY_DURATION = 500; // 500ms
