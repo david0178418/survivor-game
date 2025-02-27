@@ -1,20 +1,6 @@
-# AI Survivor Game
+# AI Survivor-Style Game
 
-A simple Brotato-style game using bitECS and PixiJS.
-
-## Features
-
-- Player character (red square) that can move around the map
-- Camera follows the player with smooth movement
-- Map enclosed with black walls and light gray background
-- Entity Component System (ECS) architecture using bitECS
-
-## Controls
-
-- **W**: Move up
-- **A**: Move left
-- **S**: Move down
-- **D**: Move right
+And I game dev expriment. Implementing a simple Brotato-style game using bitECS and PixiJS. Attempting to implement as hands-off as possible.
 
 ## How to Run
 
@@ -23,6 +9,12 @@ A simple Brotato-style game using bitECS and PixiJS.
 3. Run `bun start` to start the development server
 4. Open your browser to the URL shown in the terminal (usually http://localhost:3000)
 
-## Development
+## Prompt History
 
-This is a basic implementation focusing on player movement and camera mechanics. Future updates will add enemies, combat, and progression systems.
+- Conversations
+	- [Baseline](./conversation/conversation-1-44378ec.md)
+		- Before the prompt, I basically just ran `bun init` and added `bitECS` and `pixi.js`.
+
+			This was just setting the basic movement. I'd actually tried this a few times and kept coming up with..._interesting_ results. I finally decided to go ahead and start with a hair more direction. This included overcoming some stale knowledge that it consistently tripped over regarding the initialization of a Pixi app.
+	- [And projectiles](./conversation/conversation-2-36f2655.md)
+	- [Health and game restart](./conversation/conversation-3-76ea286.md)
