@@ -22,4 +22,5 @@ And I game dev expriment. Implementing a simple Brotato-style game using bitECS 
 	- [Pickup Vaccuum Range](./conversations/conversation-5-59d75fa.md)
 	- [Refactoring/cleanup](./conversations/conversation-6.md)
 	- [Leveling](./conversations/conversation-7-621344b.md)
+	- [Damage Invincibility Window](./conversations/conversation-8-6de16ed.md)
 
