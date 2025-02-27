@@ -20,4 +20,6 @@ And I game dev expriment. Implementing a simple Brotato-style game using bitECS 
 	- [Health and game restart](./conversations/conversation-3-76ea286.md)
 	- [Enemy drops](./conversations/conversation-4-dd5e538.md)
 	- [Pickup Vaccuum Range](./conversations/conversation-5-59d75fa.md)
+	- [Refactoring/cleanup](./conversations/conversation-6.md)
+	- [Leveling](./conversations/conversation-7-621344b.md)
 
