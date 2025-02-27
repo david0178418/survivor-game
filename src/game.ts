@@ -15,7 +15,7 @@ import { setupInputHandlers, inputSystem } from './systems/input';
 import { createBoundaries } from './systems/map';
 import { Enemy } from './entities/enemy';
 import type { World, GameState } from './types';
-import { MAP, EXPERIENCE } from './constants';
+import { MAP } from './constants';
 
 // Create the ECS world
 const world: World = createWorld();
