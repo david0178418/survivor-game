@@ -1,5 +1,7 @@
 # Conversation 1
 
+***Cursor Composer Agent Mode w/ claude-3.7-sonnet-thinking***
+
 ## Prompt 1
 [commit](https://github.com/david0178418/survivor-game/commit/44378ec2225ca9663bf4af6e9637d2f82c39da46)
 
