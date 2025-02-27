@@ -11,7 +11,7 @@ import { shootingSystem } from './systems/shooting';
 import { collisionSystem, isPlayerDead } from './systems/collision';
 import { collectibleSystem } from './systems/collectible';
 import { Enemy } from './entities/enemy';
-import { Projectile, Player, Health, Collectible, Velocity } from './components';
+import { Projectile, Player, Health, Collectible, Velocity, PickupRange } from './components';
 
 // Create the ECS world
 let world = createWorld();
@@ -48,6 +48,7 @@ const app = new Application();
 let healthText: Text;
 let speedText: Text;
 let damageText: Text;
+let rangeText: Text;
 let statsContainer: Graphics;
 
 // Game initialization
@@ -135,7 +136,7 @@ function createUI() {
   // Create a semi-transparent container for stats
   statsContainer = new Graphics();
   statsContainer.beginFill(0x000000, 0.5);
-  statsContainer.drawRect(0, 0, 200, 100);
+  statsContainer.drawRect(0, 0, 200, 125); // Made taller to fit new range text
   statsContainer.endFill();
   statsContainer.x = 10;
   statsContainer.y = 10;
@@ -180,6 +181,19 @@ function createUI() {
   damageText.y = 70;
   damageText.resolution = 2;
   app.stage.addChild(damageText);
+
+  // Range display
+  rangeText = new Text('Pickup Range: 150', {
+    fontFamily: 'Arial',
+    fontSize: 16,
+    fill: 0xFFFFFF,
+    align: 'left'
+  });
+
+  rangeText.x = 20;
+  rangeText.y = 95;
+  rangeText.resolution = 2;
+  app.stage.addChild(rangeText);
 }
 
 // Update UI
@@ -204,6 +218,12 @@ function updateUI(world: any) {
   // We just need to reflect the current value
   damageText.text = `Damage: ${1 + Math.floor(getPlayerDamageBoost())}`;
 
+  // Update pickup range display
+  if (hasComponent(world, PickupRange, player)) {
+    const range = Math.round(PickupRange.radius[player]);
+    rangeText.text = `Pickup Range: ${range}`;
+  }
+
   // Make sure UI follows camera
   statsContainer.x = gameState.camera.x + 10;
   statsContainer.y = gameState.camera.y + 10;
@@ -216,6 +236,9 @@ function updateUI(world: any) {
 
   damageText.x = gameState.camera.x + 20;
   damageText.y = gameState.camera.y + 70;
+
+  rangeText.x = gameState.camera.x + 20;
+  rangeText.y = gameState.camera.y + 95;
 }
 
 // Setup input handlers

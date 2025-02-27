@@ -83,3 +83,9 @@ export const Collectible = defineComponent({
   value: Types.f32,  // How much value the collectible provides
   lifeTime: Types.f32  // How long the collectible exists in ms
 });
+
+// PickupRange component - for entities that can attract items
+export const PickupRange = defineComponent({
+  radius: Types.f32,  // Radius in which items are attracted
+  attractionSpeed: Types.f32  // How fast items move toward the entity
+});

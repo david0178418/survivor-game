@@ -5,14 +5,16 @@ import { Position, Render, Collectible } from '../components';
 export enum CollectibleType {
   HEALTH = 0,
   SPEED = 1,
-  DAMAGE = 2
+  DAMAGE = 2,
+  RANGE = 3
 }
 
 // Colors for different collectible types
 const COLLECTIBLE_COLORS = {
   [CollectibleType.HEALTH]: 0xFFA500,   // Orange for health
   [CollectibleType.SPEED]: 0x00FFFF,    // Cyan for speed
-  [CollectibleType.DAMAGE]: 0xFF00FF    // Magenta for damage boost
+  [CollectibleType.DAMAGE]: 0xFF00FF,   // Magenta for damage boost
+  [CollectibleType.RANGE]: 0xFFFF00     // Yellow for pickup range
 };
 
 // Create a collectible at the given position with the given type
@@ -40,6 +42,9 @@ export function createCollectible(world: any, x: number, y: number, type: Collec
     case CollectibleType.DAMAGE:
       Collectible.value[collectible] = 1; // Increase damage by 1
       break;
+    case CollectibleType.RANGE:
+      Collectible.value[collectible] = 25; // Increase pickup range by 25 pixels
+      break;
   }
 
   // Set lifetime for the collectible (10 seconds)
@@ -58,11 +63,13 @@ export function createCollectible(world: any, x: number, y: number, type: Collec
 export function getRandomCollectibleType(): CollectibleType {
   const rand = Math.random();
 
-  if (rand < 0.6) {
-    return CollectibleType.HEALTH; // 60% chance for health
-  } else if (rand < 0.8) {
+  if (rand < 0.5) {
+    return CollectibleType.HEALTH; // 50% chance for health
+  } else if (rand < 0.7) {
     return CollectibleType.SPEED; // 20% chance for speed
-  } else {
+  } else if (rand < 0.9) {
     return CollectibleType.DAMAGE; // 20% chance for damage
+  } else {
+    return CollectibleType.RANGE; // 10% chance for pickup range
   }
 }
