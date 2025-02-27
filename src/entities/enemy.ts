@@ -1,5 +1,5 @@
 import { addEntity, addComponent, defineComponent } from 'bitecs';
-import { Position, Velocity, Render } from '../components';
+import { Position, Velocity, Render, Health, Damage } from '../components';
 
 // Create a new Enemy component
 export const Enemy = defineComponent();
@@ -33,5 +33,14 @@ export function createEnemy(world: any, playerX: number, playerY: number) {
   Render.height[enemy] = 30;
   Render.color[enemy] = 0x00FF00; // Green squares for enemies
   
+  // Add Health component
+  addComponent(world, Health, enemy);
+  Health.current[enemy] = 2;
+  Health.max[enemy] = 2;
+  
+  // Add Damage component - enemies deal 2 damage on contact
+  addComponent(world, Damage, enemy);
+  Damage.amount[enemy] = 2;
+  
   return enemy;
-} 
+}

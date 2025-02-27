@@ -1,5 +1,5 @@
 import { addEntity, addComponent } from 'bitecs';
-import { Position, Velocity, Render, Projectile } from '../components';
+import { Position, Velocity, Render, Projectile, Damage } from '../components';
 
 export function createProjectile(world: any, startX: number, startY: number, targetX: number, targetY: number) {
   // Create a new entity
@@ -39,5 +39,9 @@ export function createProjectile(world: any, startX: number, startY: number, tar
   Render.height[projectile] = 15;
   Render.color[projectile] = 0x0000FF; // Blue square for projectiles
   
+  // Add Damage component - projectiles deal 1 damage
+  addComponent(world, Damage, projectile);
+  Damage.amount[projectile] = 1;
+  
   return projectile;
-} 
+}

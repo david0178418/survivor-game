@@ -1,5 +1,5 @@
-import { Application, Graphics, Ticker } from 'pixi.js';
-import { createWorld, defineQuery } from 'bitecs';
+import { Application, Graphics, Ticker, Text } from 'pixi.js';
+import { createWorld, defineQuery, deleteWorld } from 'bitecs';
 import { createPlayer } from './entities/player';
 import { movementSystem } from './systems/movement';
 import { cameraSystem } from './systems/camera';
@@ -8,12 +8,12 @@ import { renderSystem } from './systems/render';
 import { spawnSystem } from './systems/spawn';
 import { enemyAISystem } from './systems/enemyAI';
 import { shootingSystem } from './systems/shooting';
-import { collisionSystem } from './systems/collision';
+import { collisionSystem, isPlayerDead } from './systems/collision';
 import { Enemy } from './entities/enemy';
-import { Projectile } from './components';
+import { Projectile, Player, Health } from './components';
 
 // Create the ECS world
-const world = createWorld();
+let world = createWorld();
 
 // Game state
 const gameState = {
@@ -37,9 +37,13 @@ const gameState = {
 // Define queries to count entities
 const enemyQuery = defineQuery([Enemy]);
 const projectileQuery = defineQuery([Projectile]);
+const playerQuery = defineQuery([Player, Health]);
 
 // Initialize PIXI Application
 const app = new Application();
+
+// UI elements
+let healthText: Text;
 
 // Game initialization
 async function init() {
@@ -55,17 +59,42 @@ async function init() {
   // Add the canvas to the document
   document.body.appendChild(app.canvas);
   
+  // Initialize the game world
+  initializeGame();
+  
+  // Setup input handlers
+  setupInputHandlers();
+  
+  // Create UI elements
+  createUI();
+  
+  // Start the game loop
+  app.ticker.add(gameLoop);
+}
+
+// Initialize a new game
+function initializeGame() {
   // Create game entities
   createPlayer(world);
   
   // Create boundary walls
   createBoundaries(world, gameState.mapSize);
+}
+
+// Reset the game
+function resetGame() {
+  // Clear the old world and create a new one
+  deleteWorld(world);
+  world = createWorld();
   
-  // Setup input handlers
-  setupInputHandlers();
+  // Reset game state (keep input state)
+  gameState.camera.x = 0;
+  gameState.camera.y = 0;
   
-  // Start the game loop
-  app.ticker.add(gameLoop);
+  // Initialize the new game
+  initializeGame();
+  
+  console.log("Game reset: Player died");
 }
 
 // Create boundary walls
@@ -94,6 +123,36 @@ function createBoundaries(world: any, mapSize: { width: number, height: number }
   wallsContainer.endFill();
   
   return wallsContainer;
+}
+
+// Create UI elements
+function createUI() {
+  // Health display
+  healthText = new Text('Health: 10 / 10', {
+    fontFamily: 'Arial',
+    fontSize: 24,
+    fill: 0xFF0000,
+    align: 'left'
+  });
+  
+  healthText.x = 10;
+  healthText.y = 10;
+  healthText.resolution = 2;
+  healthText.zIndex = 100;
+  
+  app.stage.addChild(healthText);
+}
+
+// Update health UI
+function updateHealthUI(world: any) {
+  const players = playerQuery(world);
+  if (players.length === 0) return;
+  
+  const player = players[0];
+  const currentHealth = Health.current[player];
+  const maxHealth = Health.max[player];
+  
+  healthText.text = `Health: ${currentHealth} / ${maxHealth}`;
 }
 
 // Setup input handlers
@@ -160,6 +219,15 @@ function gameLoop(ticker: Ticker) {
   // Get current entity counts
   const enemyCount = enemyQuery(world).length;
   const projectileCount = projectileQuery(world).length;
+  
+  // Check if player is dead
+  if (isPlayerDead(world)) {
+    resetGame();
+    return;
+  }
+  
+  // Update UI
+  updateHealthUI(world);
   
   // Run systems
   movementSystem(world, gameState, delta);

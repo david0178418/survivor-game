@@ -1,5 +1,5 @@
 import { addEntity, addComponent } from 'bitecs';
-import { Position, Velocity, Player, Render, CameraTarget } from '../components';
+import { Position, Velocity, Player, Render, CameraTarget, Health } from '../components';
 
 export function createPlayer(world: any) {
   // Create a new entity
@@ -31,5 +31,10 @@ export function createPlayer(world: any) {
   CameraTarget.offsetY[player] = 0;
   CameraTarget.deadZoneRadius[player] = 100; // Radius of the "give" in the camera
   
+  // Add Health component
+  addComponent(world, Health, player);
+  Health.current[player] = 10;
+  Health.max[player] = 10;
+  
   return player;
-} 
+}

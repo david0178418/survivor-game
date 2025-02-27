@@ -64,4 +64,15 @@ export const Projectile = defineComponent({
   targetX: Types.f32,
   targetY: Types.f32,
   lifeTime: Types.f32  // How long the projectile exists in ms
-}); 
+});
+
+// Health component - for entities that can take damage
+export const Health = defineComponent({
+  current: Types.i32,
+  max: Types.i32
+});
+
+// Damage component - for entities that deal damage
+export const Damage = defineComponent({
+  amount: Types.i32
+});
