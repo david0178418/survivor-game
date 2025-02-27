@@ -11,7 +11,7 @@ import { shootingSystem } from './systems/shooting';
 import { collisionSystem, isPlayerDead } from './systems/collision';
 import { collectibleSystem } from './systems/collectible';
 import { createUI, uiSystem } from './systems/ui';
-import { setupInputHandlers, inputSystem } from './systems/input';
+import { setupInputHandlers } from './systems/input';
 import { createBoundaries } from './systems/map';
 import { Enemy } from './entities/enemy';
 import type { World, GameState } from './types';
@@ -144,7 +144,6 @@ function gameLoop(ticker: Ticker) {
 	}
 
 	// Run systems with their required parameters
-	inputSystem(world);
 	movementSystem(world, { gameState, delta });
 	shootingSystem(world, { delta });
 	spawnSystem(world, { delta, enemyCount });

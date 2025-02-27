@@ -1,5 +1,4 @@
 import { Application } from 'pixi.js';
-import { defineSystem } from 'bitecs';
 import type { GameState } from '../types';
 
 /**
@@ -70,12 +69,3 @@ export function setupInputHandlers(gameState: GameState, app: Application) {
 		app.renderer.resize(window.innerWidth, window.innerHeight);
 	});
 }
-
-/**
- * Process input for the current frame
- * Since we update gameState directly in the event handlers,
- * this system exists mainly for consistency and future input processing
- */
-export const inputSystem = defineSystem((world: any): any => {
-	return world;
-});
