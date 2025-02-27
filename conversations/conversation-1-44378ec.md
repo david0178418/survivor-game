@@ -8,24 +8,16 @@
 
 <details>
 	<summary>
-		> Using bitECS, implement the foundations of a simple Brotato style game in typescript.
-		>
-		> For the graphics, use a red square for the character.
-		>
-		> The user can move on the map.  The camera will follow them with  some "give" in the middle.
-		>
-		> The map will be enclosed with a wall. Make the walls black. The background will be light gray.
-		>
-		> Do not implement anything more until we get this portion set.
-		>
-		> Create a new file for each system in a directory caleld `systems`.
-		>
-		> Create a new file for every entity in a directory called `entities`.
-		>
-		> Keep in mind that PIXI apps are initialized with the following:
-		>
-		> const app = new Application();
-		> await app.init(...);
+		Using bitECS, implement the foundations of a simple Brotato style game in typescript.<br/>
+		For the graphics, use a red square for the character.<br/>
+		The user can move on the map.  The camera will follow them with  some "give" in the middle.<br/>
+		The map will be enclosed with a wall. Make the walls black. The background will be light gray.<br/>
+		Do not implement anything more until we get this portion set.<br/>
+		Create a new file for each system in a directory caleld `systems`.<br/>
+		Create a new file for every entity in a directory called `entities`.<br/>
+		Keep in mind that PIXI apps are initialized with the following:<br/>
+		<code>const app = new Application();<br/>
+		await app.init(...);</code>
 	</summary>
 
 	## Response
