@@ -1,4 +1,4 @@
-import { defineQuery, removeEntity } from 'bitecs';
+import { defineQuery, defineSystem, removeEntity } from 'bitecs';
 import { Position, Player, Projectile, Velocity } from '../components';
 import { Enemy } from '../entities/enemy';
 import { createProjectile } from '../entities/projectile';
@@ -19,7 +19,7 @@ const SHOOT_COOLDOWN_TIME = 1_250; // 1s between shots
  * @param delta Time since last frame in milliseconds
  * @returns The updated world
  */
-export function shootingSystem(world: any, delta: number): any {
+export const shootingSystem = defineSystem((world: any, { delta }: { delta: number }): any => {
 	// Update cooldown
 	if (shootCooldown > 0) {
 		shootCooldown -= delta;
@@ -41,7 +41,7 @@ export function shootingSystem(world: any, delta: number): any {
 		Position.y[projectile] += Velocity.y[projectile] * Velocity.speed[projectile] * delta;
 	}
 
-	// Only process shooting if the cooldown is ready (no longer require spacebar)
+	// Only process shooting if the cooldown is ready
 	if (shootCooldown > 0) {
 		return world;
 	}
@@ -96,4 +96,4 @@ export function shootingSystem(world: any, delta: number): any {
 	}
 
 	return world;
-}
+});

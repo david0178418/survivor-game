@@ -1,4 +1,4 @@
-import { defineQuery } from 'bitecs';
+import { defineQuery, defineSystem } from 'bitecs';
 import { Player, Position, Experience } from '../components';
 import { createEnemy, EnemyType, ENEMY_LEVEL_REQUIREMENTS } from '../entities/enemy';
 import { ENEMY_SCALING } from '../constants';
@@ -54,7 +54,7 @@ function selectRandomEnemyType(availableTypes: EnemyType[]): EnemyType {
  * @param enemyCount Current number of enemies in the world
  * @returns The updated world
  */
-export function spawnSystem(world: any, delta: number, enemyCount: number) {
+export const spawnSystem = defineSystem((world: any, { delta, enemyCount }: { delta: number; enemyCount: number }): any => {
 	// Get the player level
 	const playerLevel = getPlayerLevel(world);
 
@@ -105,4 +105,4 @@ export function spawnSystem(world: any, delta: number, enemyCount: number) {
 	}
 
 	return world;
-}
+});

@@ -1,11 +1,12 @@
-import { defineQuery } from 'bitecs';
+import { defineQuery, defineSystem } from 'bitecs';
 import { Position, CameraTarget } from '../components';
-import { Application } from 'pixi.js';
+import { Application, Container } from 'pixi.js';
+import type { GameState } from '../types';
 
 // Define a query to get entities that the camera should follow
 const cameraTargetQuery = defineQuery([Position, CameraTarget]);
 
-export function cameraSystem(world: any, gameState: any, app: Application) {
+export const cameraSystem = defineSystem((world: any, { gameState, app, gameStage }: { gameState: GameState; app: Application; gameStage: Container }): any => {
 	// Get camera target entities
 	const entities = cameraTargetQuery(world);
 
@@ -18,9 +19,6 @@ export function cameraSystem(world: any, gameState: any, app: Application) {
 	const targetX = Position.x[entity];
 	const targetY = Position.y[entity];
 
-	// Get the current camera position
-	const { x: cameraX, y: cameraY } = gameState.camera;
-
 	// Get screen center
 	const screenCenterX = app.screen.width / 2;
 	const screenCenterY = app.screen.height / 2;
@@ -28,24 +26,24 @@ export function cameraSystem(world: any, gameState: any, app: Application) {
 	// Get the dead zone radius (the "give" in the camera)
 	const deadZoneRadius = CameraTarget.deadZoneRadius[entity];
 
-	// Calculate distance between current camera focus and target
-	const dx = targetX - (cameraX + screenCenterX);
-	const dy = targetY - (cameraY + screenCenterY);
+	// Calculate distance from target to camera
+	const dx = targetX - (gameState.camera.x + screenCenterX);
+	const dy = targetY - (gameState.camera.y + screenCenterY);
 	const distance = Math.sqrt(dx * dx + dy * dy);
 
-	// If target is outside the dead zone, move the camera
+	// Only move camera if target is outside dead zone
 	if (distance > deadZoneRadius) {
-		// Calculate how much the camera should move
-		const ratio = 1 - (deadZoneRadius / distance);
+		// Calculate how far outside the dead zone the target is
+		const excess = distance - deadZoneRadius;
+		const angle = Math.atan2(dy, dx);
 
-		// Smoothly move the camera (lerp)
-		gameState.camera.x += dx * ratio * 0.1;
-		gameState.camera.y += dy * ratio * 0.1;
+		// Move camera toward target
+		gameState.camera.x += Math.cos(angle) * excess;
+		gameState.camera.y += Math.sin(angle) * excess;
 	}
 
-	// Update the stage position to follow the camera
-	app.stage.x = -gameState.camera.x;
-	app.stage.y = -gameState.camera.y;
+	// Update game stage position for camera movement
+	gameStage.position.set(-gameState.camera.x, -gameState.camera.y);
 
 	return world;
-}
+});

@@ -1,10 +1,12 @@
-import { defineQuery } from 'bitecs';
+import { defineQuery, defineSystem } from 'bitecs';
 import { Position, Velocity, Player } from '../components';
+import type { GameState } from '../types';
 
 // Define a query to get all entities with Position, Velocity, and Player components
 const playerQuery = defineQuery([Position, Velocity, Player]);
 
-export function movementSystem(world: any, gameState: any, delta: number) {
+// Create the movement system
+export const movementSystem = defineSystem((world: any, { gameState, delta }: { gameState: GameState; delta: number }): any => {
 	// Get player entities
 	const entities = playerQuery(world);
 
@@ -28,18 +30,15 @@ export function movementSystem(world: any, gameState: any, delta: number) {
 			Velocity.x[entity] += 1;
 		}
 
-		// Normalize velocity for diagonal movement
+		// Normalize diagonal movement
 		const vx = Velocity.x[entity];
 		const vy = Velocity.y[entity];
+		const magnitude = Math.sqrt(vx * vx + vy * vy);
 
-		if (vx !== 0 || vy !== 0) {
-			const magnitude = Math.sqrt(vx * vx + vy * vy);
-
-			// Only normalize if magnitude is not 0 (avoid division by zero)
-			if (magnitude !== 0) {
-				Velocity.x[entity] = vx / magnitude;
-				Velocity.y[entity] = vy / magnitude;
-			}
+		// Only normalize if magnitude is not 0 (avoid division by zero)
+		if (magnitude !== 0) {
+			Velocity.x[entity] = vx / magnitude;
+			Velocity.y[entity] = vy / magnitude;
 		}
 
 		// Apply velocity to position
@@ -48,4 +47,4 @@ export function movementSystem(world: any, gameState: any, delta: number) {
 	}
 
 	return world;
-}
+});

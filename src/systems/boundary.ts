@@ -1,8 +1,8 @@
-import { defineQuery, removeEntity } from 'bitecs';
+import { defineQuery, removeEntity, defineSystem } from 'bitecs';
 import { Position, Player, Render, Projectile } from '../components';
 import { Enemy } from '../entities/enemy';
 import { getMapBoundaries } from './map';
-import type { World, MapSize, Entity } from '../types';
+import type { World, MapSize } from '../types';
 
 // Define queries for entities that need boundary constraints
 const playerQuery = defineQuery([Position, Player, Render]);
@@ -11,67 +11,67 @@ const projectileQuery = defineQuery([Position, Projectile, Render]);
 
 /**
  * System for handling entity boundary constraints
- *
- * @param world The ECS world
- * @param mapSize The size of the map
- * @returns The updated world
  */
-export function boundarySystem(world: World, mapSize: MapSize): World {
+export const boundarySystem = defineSystem((world: World, { mapSize }: { mapSize: MapSize }): World => {
 	// Get the map boundaries
 	const { minX, minY, maxX, maxY } = getMapBoundaries(mapSize);
 
-	/**
-	 * Process an entity for boundary constraints
-	 *
-	 * @param entity The entity to process
-	 * @param destroy Whether to destroy the entity if it's outside boundaries
-	 */
-	const processEntity = (entity: Entity, destroy = false): void => {
+	// Process player entities (constrain to boundaries)
+	const players = playerQuery(world);
+	for (const entity of players) {
 		const width = Render.width[entity];
 		const height = Render.height[entity];
 
-		// Check if entity is outside boundaries
-		const outsideX = Position.x[entity] < minX + width / 2 || Position.x[entity] > maxX - width / 2;
-		const outsideY = Position.y[entity] < minY + height / 2 || Position.y[entity] > maxY - height / 2;
-
-		if (destroy && (outsideX || outsideY)) {
-		// Destroy entities that should be removed when hitting boundaries
-			removeEntity(world, entity);
-			return;
-		}
-
-		// Constrain entity position to stay within map boundaries
-		// Account for entity size
+		// Constrain position within boundaries
 		if (Position.x[entity] < minX + width / 2) {
 			Position.x[entity] = minX + width / 2;
-		} else if (Position.x[entity] > maxX - width / 2) {
+		}
+		if (Position.x[entity] > maxX - width / 2) {
 			Position.x[entity] = maxX - width / 2;
 		}
-
 		if (Position.y[entity] < minY + height / 2) {
 			Position.y[entity] = minY + height / 2;
-		} else if (Position.y[entity] > maxY - height / 2) {
+		}
+		if (Position.y[entity] > maxY - height / 2) {
 			Position.y[entity] = maxY - height / 2;
 		}
-	};
-
-	// Apply to player entities
-	const players = playerQuery(world);
-	for (const entity of players) {
-		processEntity(entity);
 	}
 
-	// Apply to enemy entities
+	// Process enemy entities (constrain to boundaries)
 	const enemies = enemyQuery(world);
 	for (const entity of enemies) {
-		processEntity(entity);
+		const width = Render.width[entity];
+		const height = Render.height[entity];
+
+		// Constrain position within boundaries
+		if (Position.x[entity] < minX + width / 2) {
+			Position.x[entity] = minX + width / 2;
+		}
+		if (Position.x[entity] > maxX - width / 2) {
+			Position.x[entity] = maxX - width / 2;
+		}
+		if (Position.y[entity] < minY + height / 2) {
+			Position.y[entity] = minY + height / 2;
+		}
+		if (Position.y[entity] > maxY - height / 2) {
+			Position.y[entity] = maxY - height / 2;
+		}
 	}
 
-	// For projectiles, destroy them if they hit the boundaries
+	// Process projectile entities (destroy if out of bounds)
 	const projectiles = projectileQuery(world);
 	for (const entity of projectiles) {
-		processEntity(entity, true);
+		const width = Render.width[entity];
+		const height = Render.height[entity];
+
+		// Check if projectile is out of bounds
+		if (Position.x[entity] < minX + width / 2 ||
+			Position.x[entity] > maxX - width / 2 ||
+			Position.y[entity] < minY + height / 2 ||
+			Position.y[entity] > maxY - height / 2) {
+			removeEntity(world, entity);
+		}
 	}
 
 	return world;
-}
+});

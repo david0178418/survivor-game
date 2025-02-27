@@ -13,6 +13,8 @@ export interface InputState {
 	left: boolean;
 	right: boolean;
 	shoot: boolean;
+	mouseX: number;
+	mouseY: number;
 }
 
 // Camera state

@@ -1,6 +1,6 @@
-import { defineQuery, hasComponent } from 'bitecs';
+import { defineQuery, hasComponent, defineSystem } from 'bitecs';
 import { Position, Render, Invincible, Player } from '../components';
-import { Application, Graphics } from 'pixi.js';
+import { Application, Container, Graphics } from 'pixi.js';
 
 // Define a query to get all renderable entities
 const renderQuery = defineQuery([Position, Render]);
@@ -8,55 +8,46 @@ const renderQuery = defineQuery([Position, Render]);
 // Map to store graphics for entities
 const entityGraphics = new Map();
 
-export function renderSystem(world: any, app: Application) {
-	// Get entities to render
+export const renderSystem = defineSystem((world: any, { app }: { app: Application & { stage: Container } }): any => {
+	// Get all entities with Position and Render components
 	const entities = renderQuery(world);
 
 	// Process each entity
 	for (const entity of entities) {
-		// Get the entity position and render properties
-		const x = Position.x[entity];
-		const y = Position.y[entity];
-		const width = Render.width[entity];
-		const height = Render.height[entity];
-		const color = Render.color[entity];
-
-		// Check if we already have a graphic for this entity
-		let graphic = entityGraphics.get(entity);
-
-		// If not, create a new one
-		if (!graphic) {
-			graphic = new Graphics();
-			app.stage.addChild(graphic);
-			entityGraphics.set(entity, graphic);
+		// Get or create graphics for this entity
+		let graphics = entityGraphics.get(entity);
+		if (!graphics) {
+			graphics = new Graphics();
+			entityGraphics.set(entity, graphics);
+			app.stage.addChild(graphics);
 		}
 
-		// Update the graphic
-		graphic.clear();
+		// Clear previous graphics
+		graphics.clear();
 
-		// Set alpha based on invincibility (if entity is a player)
-		if (hasComponent(world, Player, entity) && hasComponent(world, Invincible, entity)) {
-			graphic.alpha = Invincible.duration[entity] > 0 ? 0.5 : 1.0;
-		} else {
-			graphic.alpha = 1.0;
-		}
+		// Check if entity is a player and is invincible
+		const isInvincible = hasComponent(world, Player, entity) && 
+							hasComponent(world, Invincible, entity) && 
+							Invincible.duration[entity] > 0;
 
-		graphic.beginFill(color);
-		graphic.drawRect(-width / 2, -height / 2, width, height);
-		graphic.endFill();
-
-		// Set position
-		graphic.x = x;
-		graphic.y = y;
+		// Draw the entity
+		graphics.beginFill(Render.color[entity], isInvincible ? 0.5 : 1);
+		graphics.drawRect(
+			Position.x[entity] - Render.width[entity] / 2,
+			Position.y[entity] - Render.height[entity] / 2,
+			Render.width[entity],
+			Render.height[entity]
+		);
+		graphics.endFill();
 	}
 
-	// Clean up removed entities
-	for (const [entityId, graphic] of entityGraphics.entries()) {
+	// Clean up graphics for removed entities
+	for (const [entityId, graphics] of entityGraphics.entries()) {
 		if (!entities.includes(entityId)) {
-			app.stage.removeChild(graphic);
+			app.stage.removeChild(graphics);
 			entityGraphics.delete(entityId);
 		}
 	}
 
 	return world;
-}
+});

@@ -1,4 +1,4 @@
-import { Application, Ticker } from 'pixi.js';
+import { Application, Ticker, Container } from 'pixi.js';
 import { createWorld, defineQuery, deleteWorld } from 'bitecs';
 import { createPlayer } from './entities/player';
 import { movementSystem } from './systems/movement';
@@ -18,7 +18,13 @@ import type { World, GameState } from './types';
 import { MAP } from './constants';
 
 // Create the ECS world
-const world: World = createWorld();
+let world: World = createWorld();
+
+// Create separate containers for game and UI
+const gameStage = new Container();
+gameStage.sortableChildren = true;
+const uiStage = new Container();
+uiStage.sortableChildren = true;
 
 // Game state
 const gameState: GameState = {
@@ -27,7 +33,9 @@ const gameState: GameState = {
 		down: false,
 		left: false,
 		right: false,
-		shoot: false
+		shoot: false,
+		mouseX: 0,
+		mouseY: 0
 	},
 	camera: {
 		x: 0,
@@ -54,69 +62,77 @@ async function init(): Promise<void> {
 	await app.init({
 		width: window.innerWidth,
 		height: window.innerHeight,
-		resolution: window.devicePixelRatio || 1,
-		autoDensity: true,
-		backgroundColor: MAP.BACKGROUND_COLOR
+		backgroundColor: MAP.BACKGROUND_COLOR,
+		resolution: window.devicePixelRatio || 1
 	});
+	document.body.appendChild(app.view as HTMLCanvasElement);
 
-	// Add the canvas to the document
-	document.body.appendChild(app.canvas);
+	// Set up stage containers (UI stage added last to be on top)
+	app.stage.sortableChildren = true;
+	app.stage.addChild(gameStage);
+	app.stage.addChild(uiStage);
+	uiStage.zIndex = 1; // Ensure UI is always on top
 
-	// Initialize the game world
-	initializeGame();
+	// Create player
+	createPlayer(world);
 
-	// Setup input handlers
-	setupInputHandlers(gameState, app);
+	// Create map boundaries
+	createBoundaries(gameStage, gameState.mapSize);
 
 	// Create UI elements
-	createUI(app);
+	createUI(uiStage);
 
-	// Start the game loop
+	// Set up input handlers
+	setupInputHandlers(gameState, app);
+
+	// Start game loop
 	app.ticker.add(gameLoop);
 }
 
 /**
- * Initialize a new game
+ * Reset the game state
  */
-function initializeGame(): void {
-	// Create game entities
+function resetGame() {
+	// Delete the current world
+	deleteWorld(world);
+
+	// Create a new world
+	world = createWorld();
+
+	// Reset game state
+	gameState.input = {
+		up: false,
+		down: false,
+		left: false,
+		right: false,
+		shoot: false,
+		mouseX: 0,
+		mouseY: 0
+	};
+	gameState.camera = { x: 0, y: 0 };
+	gameState.paused = false;
+
+	// Clear stages
+	gameStage.removeChildren();
+	uiStage.removeChildren();
+
+	// Create a new player
 	createPlayer(world);
 
-	// Create boundary walls
-	createBoundaries(app, gameState.mapSize);
-}
+	// Create map boundaries
+	createBoundaries(gameStage, gameState.mapSize);
 
-/**
- * Reset the game
- */
-function resetGame(): void {
-	// Clear the old world and create a new one
-	deleteWorld(world);
-	Object.assign(world, createWorld());
-
-	// Reset game state (keep input state)
-	gameState.camera.x = 0;
-	gameState.camera.y = 0;
-
-	// Initialize the new game
-	initializeGame();
-
-	console.log("Game reset: Player died");
+	// Recreate UI elements
+	createUI(uiStage);
 }
 
 /**
  * Main game loop
  */
-function gameLoop(ticker: Ticker): void {
+function gameLoop(ticker: Ticker) {
+	if (gameState.paused) return;
+
 	const delta = ticker.deltaMS;
-
-	// Process inputs
-	inputSystem(gameState);
-
-	// If game is paused, skip remaining updates
-	if (gameState.paused) {
-		return;
-	}
 
 	// Get current entity counts
 	const enemyCount = enemyQuery(world).length;
@@ -127,17 +143,18 @@ function gameLoop(ticker: Ticker): void {
 		return;
 	}
 
-	// Run systems
-	movementSystem(world, gameState, delta);
-	shootingSystem(world, delta);
-	spawnSystem(world, delta, enemyCount);
-	enemyAISystem(world, delta);
-	collectibleSystem(world, delta);
+	// Run systems with their required parameters
+	inputSystem(world);
+	movementSystem(world, { gameState, delta });
+	shootingSystem(world, { delta });
+	spawnSystem(world, { delta, enemyCount });
+	enemyAISystem(world, { delta });
+	collectibleSystem(world, { delta });
 	collisionSystem(world);
-	boundarySystem(world, gameState.mapSize);
-	uiSystem(world, gameState, delta); // Pass delta to UI system for notification timing
-	cameraSystem(world, gameState, app);
-	renderSystem(world, app);
+	boundarySystem(world, { mapSize: gameState.mapSize });
+	uiSystem(world, { app });
+	cameraSystem(world, { gameState, app, gameStage });
+	renderSystem(world, { app: { ...app, stage: gameStage } as Application & { stage: Container } });
 }
 
 // Start the game

@@ -1,15 +1,14 @@
 import { Application } from 'pixi.js';
+import { defineSystem } from 'bitecs';
 import type { GameState } from '../types';
 
 /**
- * Sets up all input handlers for the game
- * @param gameState Reference to the game state to update
- * @param app PIXI Application instance (for window resize handling)
+ * Set up input event handlers for the game
  */
-export function setupInputHandlers(gameState: GameState, app: Application): void {
-	// Keyboard handling
-	window.addEventListener('keydown', (e: KeyboardEvent): void => {
-		switch (e.key.toLowerCase()) {
+export function setupInputHandlers(gameState: GameState, app: Application) {
+	// Handle keydown events
+	window.addEventListener('keydown', (event) => {
+		switch (event.key.toLowerCase()) {
 			case 'w':
 			case 'arrowup':
 				gameState.input.up = true;
@@ -35,8 +34,9 @@ export function setupInputHandlers(gameState: GameState, app: Application): void
 		}
 	});
 
-	window.addEventListener('keyup', (e: KeyboardEvent): void => {
-		switch (e.key.toLowerCase()) {
+	// Handle keyup events
+	window.addEventListener('keyup', (event) => {
+		switch (event.key.toLowerCase()) {
 			case 'w':
 			case 'arrowup':
 				gameState.input.up = false;
@@ -59,6 +59,12 @@ export function setupInputHandlers(gameState: GameState, app: Application): void
 		}
 	});
 
+	// Handle mouse move events
+	window.addEventListener('mousemove', (event) => {
+		gameState.input.mouseX = event.clientX;
+		gameState.input.mouseY = event.clientY;
+	});
+
 	// Handle window resize
 	window.addEventListener('resize', (): void => {
 		app.renderer.resize(window.innerWidth, window.innerHeight);
@@ -66,14 +72,10 @@ export function setupInputHandlers(gameState: GameState, app: Application): void
 }
 
 /**
- * Process input for the current frame (currently just a stub)
- * This could be used for more complex input processing in the future
- *
- * @param gameState The game state to process input for
- * @returns The updated game state
+ * Process input for the current frame
+ * Since we update gameState directly in the event handlers,
+ * this system exists mainly for consistency and future input processing
  */
-export function inputSystem(gameState: GameState): GameState {
-	// For now, there's nothing more to do here as we directly update gameState
-	// But in the future we could add more logic (like input buffering, combos, etc.)
-	return gameState;
-}
+export const inputSystem = defineSystem((world: any): any => {
+	return world;
+});

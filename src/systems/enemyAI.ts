@@ -1,4 +1,4 @@
-import { defineQuery } from 'bitecs';
+import { defineQuery, defineSystem } from 'bitecs';
 import { Position, Velocity, Player } from '../components';
 import { Enemy, FastEnemy, ShooterEnemy } from '../entities/enemy';
 import { createEnemyProjectile } from '../entities/projectile';
@@ -31,7 +31,7 @@ export function cleanupShooterCooldowns(world: any): void {
 	}
 }
 
-export function enemyAISystem(world: any, delta: number) {
+export const enemyAISystem = defineSystem((world: any, { delta }: { delta: number }): any => {
 	// Find the player entity
 	const playerEntities = playerQuery(world);
 	if (playerEntities.length === 0) {
@@ -131,4 +131,4 @@ export function enemyAISystem(world: any, delta: number) {
 	}
 
 	return world;
-}
+});

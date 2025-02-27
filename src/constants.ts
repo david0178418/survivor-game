@@ -3,7 +3,8 @@ export const MAP = {
 	WIDTH: 2000,
 	HEIGHT: 2000,
 	WALL_THICKNESS: 20,
-	BACKGROUND_COLOR: 0xdddddd
+	BACKGROUND_COLOR: 0xdddddd,
+	WALL_COLOR: 0x000000
 };
 
 // Player settings
@@ -82,7 +83,7 @@ export const ENEMY_SCALING = {
 export const UI = {
 	STATS_PANEL: {
 		WIDTH: 200,
-		HEIGHT: 125,
+		HEIGHT: 200, // Increased to accommodate all elements plus padding
 		X_OFFSET: 10,
 		Y_OFFSET: 10,
 		BACKGROUND_COLOR: 0x000000,
