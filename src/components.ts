@@ -81,11 +81,19 @@ export const Damage = defineComponent({
 export const Collectible = defineComponent({
 	type: Types.ui8,  // 0 = health, 1 = speed, 2 = damage boost, etc.
 	value: Types.f32,  // How much value the collectible provides
-	lifeTime: Types.f32  // How long the collectible exists in ms
+	lifeTime: Types.f32,  // How long the collectible exists in ms
+	isLarge: Types.ui8 // 0 = small (1 XP), 1 = large (5 XP)
 });
 
 // PickupRange component - for entities that can attract items
 export const PickupRange = defineComponent({
 	radius: Types.f32,  // Radius in which items are attracted
 	attractionSpeed: Types.f32  // How fast items move toward the entity
+});
+
+// Experience component - for tracking player level and XP
+export const Experience = defineComponent({
+	level: Types.ui32,  // Current level
+	current: Types.ui32,  // Current XP
+	nextLevel: Types.ui32  // XP required for next level
 });

@@ -1,11 +1,11 @@
 import { defineQuery, removeEntity, hasComponent } from 'bitecs';
-import { Position, Render, Collectible, Player, Health, Velocity, PickupRange } from '../components';
+import { Position, Render, Collectible, Player, Health, Velocity, PickupRange, Experience } from '../components';
 import { CollectibleType } from '../entities/collectible';
-import { COLLECTIBLE } from '../constants';
+import { COLLECTIBLE, EXPERIENCE } from '../constants';
 
 // Define queries for collectibles and player
 const collectibleQuery = defineQuery([Collectible, Position, Render]);
-const playerQuery = defineQuery([Player, Position, Render, PickupRange]);
+const playerQuery = defineQuery([Player, Position, Render, PickupRange, Experience]);
 
 // Store player upgrades for speed and damage
 let playerSpeedBoost = 0;
@@ -91,6 +91,9 @@ function handleCollectibleMovement(
 		// Player collided with collectible, apply its effect
 		applyCollectibleEffect(world, player, collectible);
 
+		// Grant experience based on collectible size
+		grantExperience(world, player, collectible);
+
 		// Remove the collectible
 		removeEntity(world, collectible);
 	}
@@ -137,6 +140,70 @@ function applyCollectibleEffect(world: any, player: number, collectible: number)
 	}
 }
 
+/**
+ * Grant experience to the player based on collectible size
+ *
+ * @param world The game world
+ * @param player The player entity
+ * @param collectible The collectible entity
+ */
+function grantExperience(world: any, player: number, collectible: number) {
+	if (!hasComponent(world, Experience, player)) {
+		return; // Player doesn't have Experience component
+	}
+
+	// Determine XP amount based on collectible size
+	const isLarge = Collectible.isLarge[collectible] === 1;
+	const xpAmount = isLarge ? COLLECTIBLE.LARGE_XP : COLLECTIBLE.SMALL_XP;
+
+	// Add experience to player
+	Experience.current[player] += xpAmount;
+
+	// Check for level up
+	checkLevelUp(world, player);
+}
+
+/**
+ * Check if player has enough XP to level up and process level up if needed
+ *
+ * @param world The game world
+ * @param player The player entity
+ */
+function checkLevelUp(world: any, player: number) {
+	const currentXP = Experience.current[player];
+	const requiredXP = Experience.nextLevel[player];
+	const currentLevel = Experience.level[player];
+
+	// Check if player has enough XP to level up
+	if (currentXP >= requiredXP && currentLevel < EXPERIENCE.MAX_LEVEL) {
+		// Level up the player
+		Experience.level[player] += 1;
+
+		// Calculate XP for next level using the scaling factor applied to previous level's requirement
+		// For example:
+		// Level 1 needs 10 XP (base)
+		// Level 2 needs 25 XP (10 + 10*1.5)
+		// Level 3 needs 63 XP (25 + 25*1.5)
+		const additionalXP = Math.floor(requiredXP * EXPERIENCE.LEVEL_SCALING_FACTOR);
+		const nextLevelXP = requiredXP + additionalXP;
+
+		Experience.nextLevel[player] = nextLevelXP;
+
+		// Apply level-up bonuses
+		if (hasComponent(world, Health, player)) {
+			// Increase max health by 10% per level
+			const newMaxHealth = Math.floor(Health.max[player] * 1.1);
+			Health.max[player] = newMaxHealth;
+
+			// Also heal 20% of max health on level up
+			const healAmount = Math.floor(newMaxHealth * 0.2);
+			Health.current[player] = Math.min(Health.current[player] + healAmount, newMaxHealth);
+		}
+
+		console.log(`Player leveled up to level ${Experience.level[player]}! Next level at ${Experience.nextLevel[player]} XP`);
+	}
+}
+
 // Get the current damage boost for projectiles
 export function getPlayerDamageBoost() {
 	return playerDamageBoost;
@@ -145,4 +212,17 @@ export function getPlayerDamageBoost() {
 // Get the current player speed boost
 export function getPlayerSpeedBoost() {
 	return playerSpeedBoost;
+}
+
+/**
+ * Get the current player level
+ *
+ * @param world The game world
+ * @returns The player's current level or 0 if no player
+ */
+export function getPlayerLevel(world: any): number {
+	const players = playerQuery(world);
+	if (players.length === 0) return 0;
+
+	return Experience.level[players[0]];
 }

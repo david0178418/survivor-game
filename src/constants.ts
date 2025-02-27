@@ -44,7 +44,38 @@ export const COLLECTIBLE = {
 		SPEED: 0.2,          // 20% chance
 		DAMAGE: 0.2,         // 20% chance
 		RANGE: 0.1           // 10% chance
-	}
+	},
+	RADIUS: 10,
+	LARGE_RADIUS: 15,
+	HEALTH_COLOR: 0xff0000, // Red
+	SPEED_COLOR: 0x00ff00,  // Green
+	DAMAGE_COLOR: 0x0000ff, // Blue
+	PICKUP_COLOR: 0xffff00, // Yellow
+	LIFETIME: 10000, // 10 seconds
+	DROP_CHANCE: 0.5, // 50% chance to drop a collectible
+	PICKUP_RANGE_VALUE: 25,
+	PICKUP_ATTRACTION_BOOST: 0.25,
+	PICKUP_DROP_CHANCE: 0.1, // 10% chance for pickup range boost
+	SMALL_XP: 1,  // XP granted by small pickup
+	LARGE_XP: 5   // XP granted by large pickup
+};
+
+// Experience constants
+export const EXPERIENCE = {
+	STARTING_LEVEL: 1,
+	BASE_XP_FOR_LEVEL: 10,  // XP needed for level 1
+	LEVEL_SCALING_FACTOR: 1.5,  // Each level requires 1.5x more XP
+	MAX_LEVEL: 30,
+	POINTS_PER_LEVEL: 5  // Each level requires 5 more XP than the previous
+};
+
+// Enemy scaling constants
+export const ENEMY_SCALING = {
+	BASE_SPAWN_COUNT: 8,  // Increased from 5 to 8
+	SPAWN_INCREASE_PER_LEVEL: 2,  // Increased from 1 to 2
+	HEALTH_SCALING: 0.1,   // 10% health increase per level
+	DAMAGE_SCALING: 0.1,   // 10% damage increase per level
+	SPEED_SCALING: 0.05    // 5% speed increase per level
 };
 
 // UI settings

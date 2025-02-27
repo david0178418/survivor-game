@@ -1,18 +1,21 @@
 import { defineQuery, hasComponent } from 'bitecs';
 import { Graphics, Text, Application } from 'pixi.js';
-import { Player, Health, Velocity, PickupRange } from '../components';
-import { UI } from '../constants';
+import { Player, Health, Velocity, PickupRange, Experience } from '../components';
+import { UI, EXPERIENCE } from '../constants';
 import type { World, GameState } from '../types';
 import { getPlayerDamageBoost } from './collectible';
 
 // Define query to get player entity
-const playerQuery = defineQuery([Player, Health]);
+const playerQuery = defineQuery([Player, Health, Experience]);
 
 // UI elements
 let healthText: Text;
 let speedText: Text;
 let damageText: Text;
 let rangeText: Text;
+let levelText: Text;
+let xpText: Text;
+let xpBar: Graphics;
 let statsContainer: Graphics;
 
 /**
@@ -29,7 +32,7 @@ export function createUI(app: Application): void {
 	statsContainer.drawRect(
 		0, 0,
 		UI.STATS_PANEL.WIDTH,
-		UI.STATS_PANEL.HEIGHT
+		UI.STATS_PANEL.HEIGHT + 60  // Increased height for XP and level
 	);
 	statsContainer.endFill();
 	statsContainer.x = UI.STATS_PANEL.X_OFFSET;
@@ -88,6 +91,38 @@ export function createUI(app: Application): void {
 	rangeText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 3;
 	rangeText.resolution = UI.TEXT.RESOLUTION;
 	app.stage.addChild(rangeText);
+
+	// Level display
+	levelText = new Text('Level: 0', {
+		fontFamily: UI.TEXT.FONT_FAMILY,
+		fontSize: UI.TEXT.FONT_SIZE,
+		fill: 0xFFFF00,  // Yellow for level
+		align: 'left'
+	});
+
+	levelText.x = UI.TEXT.X_OFFSET;
+	levelText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 4;
+	levelText.resolution = UI.TEXT.RESOLUTION;
+	app.stage.addChild(levelText);
+
+	// XP display
+	xpText = new Text('XP: 0 / 10', {
+		fontFamily: UI.TEXT.FONT_FAMILY,
+		fontSize: UI.TEXT.FONT_SIZE,
+		fill: 0xFFFF00,  // Yellow for XP
+		align: 'left'
+	});
+
+	xpText.x = UI.TEXT.X_OFFSET;
+	xpText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 5;
+	xpText.resolution = UI.TEXT.RESOLUTION;
+	app.stage.addChild(xpText);
+
+	// XP progress bar
+	xpBar = new Graphics();
+	xpBar.x = UI.TEXT.X_OFFSET;
+	xpBar.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 6;
+	app.stage.addChild(xpBar);
 }
 
 /**
@@ -123,6 +158,38 @@ export function uiSystem(world: World, gameState: GameState): World {
 		rangeText.text = `Pickup Range: ${range}`;
 	}
 
+	// Update level and XP display
+	if (hasComponent(world, Experience, player)) {
+		const level = Experience.level[player];
+		const currentXP = Experience.current[player];
+		const nextLevelXP = Experience.nextLevel[player];
+
+		levelText.text = `Level: ${level}`;
+		xpText.text = `XP: ${currentXP} / ${nextLevelXP}`;
+
+		// Update XP progress bar to show progress from current level to next level
+		const barWidth = 200;
+		const barHeight = 10;
+
+		// Calculate progress between current level and next level
+		// This resets the bar with each level-up
+		const xpForCurrentLevel = currentXP - (nextLevelXP / (1 + EXPERIENCE.LEVEL_SCALING_FACTOR));
+		const xpNeededForNextLevel = nextLevelXP - (nextLevelXP / (1 + EXPERIENCE.LEVEL_SCALING_FACTOR));
+		const progress = Math.min(xpForCurrentLevel / xpNeededForNextLevel, 1);
+
+		xpBar.clear();
+
+		// Background bar (gray)
+		xpBar.beginFill(0x666666);
+		xpBar.drawRect(0, 0, barWidth, barHeight);
+		xpBar.endFill();
+
+		// Progress bar (yellow)
+		xpBar.beginFill(0xFFFF00);
+		xpBar.drawRect(0, 0, barWidth * progress, barHeight);
+		xpBar.endFill();
+	}
+
 	// Make sure UI follows camera
 	statsContainer.x = gameState.camera.x + UI.STATS_PANEL.X_OFFSET;
 	statsContainer.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET;
@@ -138,6 +205,15 @@ export function uiSystem(world: World, gameState: GameState): World {
 
 	rangeText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
 	rangeText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 3;
+
+	levelText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
+	levelText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 4;
+
+	xpText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
+	xpText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 5;
+
+	xpBar.x = gameState.camera.x + UI.TEXT.X_OFFSET;
+	xpBar.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 6;
 
 	return world;
 }

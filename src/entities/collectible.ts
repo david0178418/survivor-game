@@ -10,8 +10,17 @@ export enum CollectibleType {
 	RANGE = 3
 }
 
-// Create a collectible at the given position with the given type
-export function createCollectible(world: any, x: number, y: number, type: CollectibleType) {
+/**
+ * Create a collectible at the given position with the given type
+ *
+ * @param world The game world
+ * @param x The x position
+ * @param y The y position
+ * @param type The collectible type
+ * @param isLarge Whether this is a large collectible (grants more XP)
+ * @returns The collectible entity ID
+ */
+export function createCollectible(world: any, x: number, y: number, type: CollectibleType, isLarge: boolean = false) {
 	// Create a new entity
 	const collectible = addEntity(world);
 
@@ -23,6 +32,7 @@ export function createCollectible(world: any, x: number, y: number, type: Collec
 	// Add Collectible component
 	addComponent(world, Collectible, collectible);
 	Collectible.type[collectible] = type;
+	Collectible.isLarge[collectible] = isLarge ? 1 : 0;
 
 	// Set value based on type
 	switch(type) {
@@ -41,26 +51,29 @@ export function createCollectible(world: any, x: number, y: number, type: Collec
 	}
 
 	// Set lifetime for the collectible
-	Collectible.lifeTime[collectible] = COLLECTIBLE.LIFETIME_MS;
+	Collectible.lifeTime[collectible] = COLLECTIBLE.LIFETIME;
 
 	// Add Render component
 	addComponent(world, Render, collectible);
-	Render.width[collectible] = COLLECTIBLE.WIDTH;
-	Render.height[collectible] = COLLECTIBLE.HEIGHT;
+
+	// Set size based on whether it's a large collectible
+	const radius = isLarge ? COLLECTIBLE.LARGE_RADIUS : COLLECTIBLE.RADIUS;
+	Render.width[collectible] = radius * 2;
+	Render.height[collectible] = radius * 2;
 
 	// Set color based on type
 	switch(type) {
 		case CollectibleType.HEALTH:
-			Render.color[collectible] = COLLECTIBLE.COLORS.HEALTH;
+			Render.color[collectible] = COLLECTIBLE.HEALTH_COLOR;
 			break;
 		case CollectibleType.SPEED:
-			Render.color[collectible] = COLLECTIBLE.COLORS.SPEED;
+			Render.color[collectible] = COLLECTIBLE.SPEED_COLOR;
 			break;
 		case CollectibleType.DAMAGE:
-			Render.color[collectible] = COLLECTIBLE.COLORS.DAMAGE;
+			Render.color[collectible] = COLLECTIBLE.DAMAGE_COLOR;
 			break;
 		case CollectibleType.RANGE:
-			Render.color[collectible] = COLLECTIBLE.COLORS.RANGE;
+			Render.color[collectible] = COLLECTIBLE.PICKUP_COLOR;
 			break;
 	}
 
@@ -81,4 +94,18 @@ export function getRandomCollectibleType(): CollectibleType {
 	} else {
 		return CollectibleType.RANGE;
 	}
+}
+
+/**
+ * Returns whether a collectible should be large (5 XP) or small (1 XP)
+ * Base chance is 20%, but increases with player level
+ *
+ * @param playerLevel The current player level
+ * @returns true if the collectible should be large
+ */
+export function shouldBeLargeCollectible(playerLevel: number = 0): boolean {
+	// Base chance of 20%, but increases by 2% per player level, capped at 60%
+	const baseChance = 0.2;
+	const levelBonus = Math.min(0.4, playerLevel * 0.02); // Cap at 40% bonus (total 60%)
+	return Math.random() < (baseChance + levelBonus);
 }

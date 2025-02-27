@@ -65,7 +65,7 @@ export function shootingSystem(world: any, delta: number): any {
 
 	// Find the closest enemy within range
 	let closestEnemy = null;
-	let closestDistance = 150; // Increased from 50px to 150px
+	let closestDistance = 450; // Increased from 150px to 450px (3x)
 
 	for (const enemy of enemies) {
 		const enemyX = Position.x[enemy];

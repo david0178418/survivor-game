@@ -1,6 +1,6 @@
 import { addEntity, addComponent } from 'bitecs';
-import { Position, Velocity, Player, Render, CameraTarget, Health, PickupRange } from '../components';
-import { PLAYER } from '../constants';
+import { Position, Velocity, Player, Render, CameraTarget, Health, PickupRange, Experience } from '../components';
+import { PLAYER, EXPERIENCE } from '../constants';
 
 export function createPlayer(world: any) {
 	// Create a new entity
@@ -41,6 +41,12 @@ export function createPlayer(world: any) {
 	addComponent(world, PickupRange, player);
 	PickupRange.radius[player] = PLAYER.PICKUP_RADIUS;
 	PickupRange.attractionSpeed[player] = PLAYER.ATTRACTION_SPEED;
+
+	// Add Experience component
+	addComponent(world, Experience, player);
+	Experience.level[player] = EXPERIENCE.STARTING_LEVEL;
+	Experience.current[player] = 0;
+	Experience.nextLevel[player] = EXPERIENCE.BASE_XP_FOR_LEVEL;
 
 	return player;
 }

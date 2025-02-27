@@ -1,12 +1,13 @@
 import { defineQuery, removeEntity, hasComponent } from 'bitecs';
-import { Position, Render, Projectile, Health, Damage, Player } from '../components';
+import { Position, Render, Projectile, Health, Damage, Player, Experience } from '../components';
 import { Enemy } from '../entities/enemy';
-import { createCollectible, getRandomCollectibleType } from '../entities/collectible';
+import { createCollectible, getRandomCollectibleType, shouldBeLargeCollectible } from '../entities/collectible';
+import { getPlayerLevel } from './collectible';
 
 // Define queries for collision detection
 const projectileQuery = defineQuery([Projectile, Position, Render, Damage]);
 const enemyQuery = defineQuery([Enemy, Position, Render, Health]);
-const playerQuery = defineQuery([Player, Position, Render, Health]);
+const playerQuery = defineQuery([Player, Position, Render, Health, Experience]);
 
 // Drop rate for collectibles from enemies
 const COLLECTIBLE_DROP_CHANCE = 0.4; // 40% chance to drop an item
@@ -20,6 +21,9 @@ export function collisionSystem(world: any) {
 	if (players.length === 0) return world; // No player found
 
 	const player = players[0]; // There should be only one player
+
+	// Get the current player level
+	const playerLevel = getPlayerLevel(world);
 
 	// Check projectile collisions with enemies
 	for (const projectile of projectiles) {
@@ -59,7 +63,8 @@ export function collisionSystem(world: any) {
 					// Chance to spawn a collectible at the enemy's position
 					if (Math.random() < COLLECTIBLE_DROP_CHANCE) {
 						const collectibleType = getRandomCollectibleType();
-						createCollectible(world, enemyPosX, enemyPosY, collectibleType);
+						const isLarge = shouldBeLargeCollectible(playerLevel);
+						createCollectible(world, enemyPosX, enemyPosY, collectibleType, isLarge);
 					}
 				}
 
@@ -101,7 +106,8 @@ export function collisionSystem(world: any) {
 			// Chance to spawn a collectible at the enemy's position
 			if (Math.random() < COLLECTIBLE_DROP_CHANCE) {
 				const collectibleType = getRandomCollectibleType();
-				createCollectible(world, enemyPosX, enemyPosY, collectibleType);
+				const isLarge = shouldBeLargeCollectible(playerLevel);
+				createCollectible(world, enemyPosX, enemyPosY, collectibleType, isLarge);
 			}
 		}
 	}
