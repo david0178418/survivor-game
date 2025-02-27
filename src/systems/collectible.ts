@@ -1,6 +1,7 @@
 import { defineQuery, removeEntity, hasComponent } from 'bitecs';
-import { Position, Render, Collectible, Player, Health, Velocity, Damage, PickupRange } from '../components';
+import { Position, Render, Collectible, Player, Health, Velocity, PickupRange } from '../components';
 import { CollectibleType } from '../entities/collectible';
+import { COLLECTIBLE } from '../constants';
 
 // Define queries for collectibles and player
 const collectibleQuery = defineQuery([Collectible, Position, Render]);
@@ -38,48 +39,65 @@ export function collectibleSystem(world: any, delta: number) {
       continue;
     }
 
-    // Get collectible position
-    const collectibleX = Position.x[collectible];
-    const collectibleY = Position.y[collectible];
-    const collectibleWidth = Render.width[collectible];
-    const collectibleHeight = Render.height[collectible];
-
-    // Calculate distance to player
-    const dx = playerX - collectibleX;
-    const dy = playerY - collectibleY;
-    const distanceToPlayer = Math.sqrt(dx * dx + dy * dy);
-
-    // Check if collectible is within pickup range
-    if (distanceToPlayer <= pickupRadius) {
-      // Calculate normalized direction vector to player
-      const dirX = dx / distanceToPlayer;
-      const dirY = dy / distanceToPlayer;
-
-      // Calculate attraction speed (faster as it gets closer)
-      const speedFactor = 1.0 - (distanceToPlayer / pickupRadius) * 0.5;
-      const moveSpeed = attractionSpeed * speedFactor * delta;
-
-      // Move collectible toward player
-      Position.x[collectible] += dirX * moveSpeed;
-      Position.y[collectible] += dirY * moveSpeed;
-    }
-
-    // Check for player collision (after movement)
-    const updatedDx = Math.abs(playerX - Position.x[collectible]);
-    const updatedDy = Math.abs(playerY - Position.y[collectible]);
-    const collisionX = updatedDx < (playerWidth + collectibleWidth) / 2;
-    const collisionY = updatedDy < (playerHeight + collectibleHeight) / 2;
-
-    if (collisionX && collisionY) {
-      // Player collided with collectible, apply its effect
-      applyCollectibleEffect(world, player, collectible);
-
-      // Remove the collectible
-      removeEntity(world, collectible);
-    }
+    // Check if collectible is within pickup range and handle movement
+    handleCollectibleMovement(world, collectible, player, delta, pickupRadius, attractionSpeed);
   }
 
   return world;
+}
+
+// Handle collectible movement toward player when in range
+function handleCollectibleMovement(
+  world: any,
+  collectible: number,
+  player: number,
+  delta: number,
+  pickupRadius: number,
+  attractionSpeed: number
+) {
+  const playerX = Position.x[player];
+  const playerY = Position.y[player];
+  const playerWidth = Render.width[player];
+  const playerHeight = Render.height[player];
+
+  const collectibleX = Position.x[collectible];
+  const collectibleY = Position.y[collectible];
+  const collectibleWidth = Render.width[collectible];
+  const collectibleHeight = Render.height[collectible];
+
+  // Calculate distance to player
+  const dx = playerX - collectibleX;
+  const dy = playerY - collectibleY;
+  const distanceToPlayer = Math.sqrt(dx * dx + dy * dy);
+
+  // Check if collectible is within pickup range
+  if (distanceToPlayer <= pickupRadius) {
+    // Calculate normalized direction vector to player
+    const dirX = dx / distanceToPlayer;
+    const dirY = dy / distanceToPlayer;
+
+    // Calculate attraction speed (faster as it gets closer)
+    const speedFactor = 1.0 - (distanceToPlayer / pickupRadius) * 0.5;
+    const moveSpeed = attractionSpeed * speedFactor * delta;
+
+    // Move collectible toward player
+    Position.x[collectible] += dirX * moveSpeed;
+    Position.y[collectible] += dirY * moveSpeed;
+  }
+
+  // Check for player collision (after movement)
+  const updatedDx = Math.abs(playerX - Position.x[collectible]);
+  const updatedDy = Math.abs(playerY - Position.y[collectible]);
+  const collisionX = updatedDx < (playerWidth + collectibleWidth) / 2;
+  const collisionY = updatedDy < (playerHeight + collectibleHeight) / 2;
+
+  if (collisionX && collisionY) {
+    // Player collided with collectible, apply its effect
+    applyCollectibleEffect(world, player, collectible);
+
+    // Remove the collectible
+    removeEntity(world, collectible);
+  }
 }
 
 // Apply the collectible's effect to the player
@@ -117,7 +135,7 @@ function applyCollectibleEffect(world: any, player: number, collectible: number)
       if (hasComponent(world, PickupRange, player)) {
         PickupRange.radius[player] += value;
         // Also slightly increase attraction speed
-        PickupRange.attractionSpeed[player] += value * 0.01;
+        PickupRange.attractionSpeed[player] += COLLECTIBLE.VALUES.RANGE_SPEED_BOOST * value;
       }
       break;
   }

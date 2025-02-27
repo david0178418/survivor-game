@@ -1,5 +1,6 @@
 import { addEntity, addComponent } from 'bitecs';
 import { Position, Render, Collectible } from '../components';
+import { COLLECTIBLE } from '../constants';
 
 // Collectible types
 export enum CollectibleType {
@@ -8,14 +9,6 @@ export enum CollectibleType {
   DAMAGE = 2,
   RANGE = 3
 }
-
-// Colors for different collectible types
-const COLLECTIBLE_COLORS = {
-  [CollectibleType.HEALTH]: 0xFFA500,   // Orange for health
-  [CollectibleType.SPEED]: 0x00FFFF,    // Cyan for speed
-  [CollectibleType.DAMAGE]: 0xFF00FF,   // Magenta for damage boost
-  [CollectibleType.RANGE]: 0xFFFF00     // Yellow for pickup range
-};
 
 // Create a collectible at the given position with the given type
 export function createCollectible(world: any, x: number, y: number, type: CollectibleType) {
@@ -34,27 +27,42 @@ export function createCollectible(world: any, x: number, y: number, type: Collec
   // Set value based on type
   switch(type) {
     case CollectibleType.HEALTH:
-      Collectible.value[collectible] = 2; // Heal 2 health
+      Collectible.value[collectible] = COLLECTIBLE.VALUES.HEALTH;
       break;
     case CollectibleType.SPEED:
-      Collectible.value[collectible] = 0.1; // Increase speed by 0.1
+      Collectible.value[collectible] = COLLECTIBLE.VALUES.SPEED;
       break;
     case CollectibleType.DAMAGE:
-      Collectible.value[collectible] = 1; // Increase damage by 1
+      Collectible.value[collectible] = COLLECTIBLE.VALUES.DAMAGE;
       break;
     case CollectibleType.RANGE:
-      Collectible.value[collectible] = 25; // Increase pickup range by 25 pixels
+      Collectible.value[collectible] = COLLECTIBLE.VALUES.RANGE;
       break;
   }
 
-  // Set lifetime for the collectible (10 seconds)
-  Collectible.lifeTime[collectible] = 10000;
+  // Set lifetime for the collectible
+  Collectible.lifeTime[collectible] = COLLECTIBLE.LIFETIME_MS;
 
   // Add Render component
   addComponent(world, Render, collectible);
-  Render.width[collectible] = 20;
-  Render.height[collectible] = 20;
-  Render.color[collectible] = COLLECTIBLE_COLORS[type];
+  Render.width[collectible] = COLLECTIBLE.WIDTH;
+  Render.height[collectible] = COLLECTIBLE.HEIGHT;
+
+  // Set color based on type
+  switch(type) {
+    case CollectibleType.HEALTH:
+      Render.color[collectible] = COLLECTIBLE.COLORS.HEALTH;
+      break;
+    case CollectibleType.SPEED:
+      Render.color[collectible] = COLLECTIBLE.COLORS.SPEED;
+      break;
+    case CollectibleType.DAMAGE:
+      Render.color[collectible] = COLLECTIBLE.COLORS.DAMAGE;
+      break;
+    case CollectibleType.RANGE:
+      Render.color[collectible] = COLLECTIBLE.COLORS.RANGE;
+      break;
+  }
 
   return collectible;
 }
@@ -62,14 +70,15 @@ export function createCollectible(world: any, x: number, y: number, type: Collec
 // Randomly pick a collectible type with weighted probabilities
 export function getRandomCollectibleType(): CollectibleType {
   const rand = Math.random();
+  const { SPAWN_CHANCE } = COLLECTIBLE;
 
-  if (rand < 0.5) {
-    return CollectibleType.HEALTH; // 50% chance for health
-  } else if (rand < 0.7) {
-    return CollectibleType.SPEED; // 20% chance for speed
-  } else if (rand < 0.9) {
-    return CollectibleType.DAMAGE; // 20% chance for damage
+  if (rand < SPAWN_CHANCE.HEALTH) {
+    return CollectibleType.HEALTH;
+  } else if (rand < SPAWN_CHANCE.HEALTH + SPAWN_CHANCE.SPEED) {
+    return CollectibleType.SPEED;
+  } else if (rand < SPAWN_CHANCE.HEALTH + SPAWN_CHANCE.SPEED + SPAWN_CHANCE.DAMAGE) {
+    return CollectibleType.DAMAGE;
   } else {
-    return CollectibleType.RANGE; // 10% chance for pickup range
+    return CollectibleType.RANGE;
   }
 }

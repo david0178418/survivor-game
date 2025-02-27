@@ -12,12 +12,14 @@ import { collisionSystem, isPlayerDead } from './systems/collision';
 import { collectibleSystem } from './systems/collectible';
 import { Enemy } from './entities/enemy';
 import { Projectile, Player, Health, Collectible, Velocity, PickupRange } from './components';
+import type { World, GameState, Entity } from './types';
+import { MAP, UI } from './constants';
 
 // Create the ECS world
-let world = createWorld();
+let world = createWorld() as World;
 
 // Game state
-const gameState = {
+const gameState: GameState = {
   input: {
     up: false,
     down: false,
@@ -30,9 +32,10 @@ const gameState = {
     y: 0
   },
   mapSize: {
-    width: 2000,
-    height: 2000
-  }
+    width: MAP.WIDTH,
+    height: MAP.HEIGHT
+  },
+  paused: false
 };
 
 // Define queries to count entities
@@ -59,7 +62,7 @@ async function init() {
     height: window.innerHeight,
     resolution: window.devicePixelRatio || 1,
     autoDensity: true,
-    backgroundColor: 0xdddddd // Light gray
+    backgroundColor: MAP.BACKGROUND_COLOR
   });
 
   // Add the canvas to the document
@@ -91,7 +94,7 @@ function initializeGame() {
 function resetGame() {
   // Clear the old world and create a new one
   deleteWorld(world);
-  world = createWorld();
+  world = createWorld() as World;
 
   // Reset game state (keep input state)
   gameState.camera.x = 0;
@@ -104,9 +107,9 @@ function resetGame() {
 }
 
 // Create boundary walls
-function createBoundaries(world: any, mapSize: { width: number, height: number }) {
+function createBoundaries(world: World, mapSize: { width: number, height: number }) {
   const { width, height } = mapSize;
-  const wallThickness = 20;
+  const wallThickness = MAP.WALL_THICKNESS;
 
   // Create the container for all walls
   const wallsContainer = new Graphics();
@@ -135,69 +138,76 @@ function createBoundaries(world: any, mapSize: { width: number, height: number }
 function createUI() {
   // Create a semi-transparent container for stats
   statsContainer = new Graphics();
-  statsContainer.beginFill(0x000000, 0.5);
-  statsContainer.drawRect(0, 0, 200, 125); // Made taller to fit new range text
+  statsContainer.beginFill(
+    UI.STATS_PANEL.BACKGROUND_COLOR,
+    UI.STATS_PANEL.BACKGROUND_ALPHA
+  );
+  statsContainer.drawRect(
+    0, 0,
+    UI.STATS_PANEL.WIDTH,
+    UI.STATS_PANEL.HEIGHT
+  );
   statsContainer.endFill();
-  statsContainer.x = 10;
-  statsContainer.y = 10;
+  statsContainer.x = UI.STATS_PANEL.X_OFFSET;
+  statsContainer.y = UI.STATS_PANEL.Y_OFFSET;
 
   app.stage.addChild(statsContainer);
 
   // Health display
   healthText = new Text('Health: 10 / 10', {
-    fontFamily: 'Arial',
-    fontSize: 16,
-    fill: 0xFFFFFF,
+    fontFamily: UI.TEXT.FONT_FAMILY,
+    fontSize: UI.TEXT.FONT_SIZE,
+    fill: UI.TEXT.COLOR,
     align: 'left'
   });
 
-  healthText.x = 20;
-  healthText.y = 20;
-  healthText.resolution = 2;
+  healthText.x = UI.TEXT.X_OFFSET;
+  healthText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET;
+  healthText.resolution = UI.TEXT.RESOLUTION;
   app.stage.addChild(healthText);
 
   // Speed display
   speedText = new Text('Speed: 0.5', {
-    fontFamily: 'Arial',
-    fontSize: 16,
-    fill: 0xFFFFFF,
+    fontFamily: UI.TEXT.FONT_FAMILY,
+    fontSize: UI.TEXT.FONT_SIZE,
+    fill: UI.TEXT.COLOR,
     align: 'left'
   });
 
-  speedText.x = 20;
-  speedText.y = 45;
-  speedText.resolution = 2;
+  speedText.x = UI.TEXT.X_OFFSET;
+  speedText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING;
+  speedText.resolution = UI.TEXT.RESOLUTION;
   app.stage.addChild(speedText);
 
   // Damage display
   damageText = new Text('Damage: 1', {
-    fontFamily: 'Arial',
-    fontSize: 16,
-    fill: 0xFFFFFF,
+    fontFamily: UI.TEXT.FONT_FAMILY,
+    fontSize: UI.TEXT.FONT_SIZE,
+    fill: UI.TEXT.COLOR,
     align: 'left'
   });
 
-  damageText.x = 20;
-  damageText.y = 70;
-  damageText.resolution = 2;
+  damageText.x = UI.TEXT.X_OFFSET;
+  damageText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 2;
+  damageText.resolution = UI.TEXT.RESOLUTION;
   app.stage.addChild(damageText);
 
   // Range display
   rangeText = new Text('Pickup Range: 150', {
-    fontFamily: 'Arial',
-    fontSize: 16,
-    fill: 0xFFFFFF,
+    fontFamily: UI.TEXT.FONT_FAMILY,
+    fontSize: UI.TEXT.FONT_SIZE,
+    fill: UI.TEXT.COLOR,
     align: 'left'
   });
 
-  rangeText.x = 20;
-  rangeText.y = 95;
-  rangeText.resolution = 2;
+  rangeText.x = UI.TEXT.X_OFFSET;
+  rangeText.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 3;
+  rangeText.resolution = UI.TEXT.RESOLUTION;
   app.stage.addChild(rangeText);
 }
 
 // Update UI
-function updateUI(world: any) {
+function updateUI(world: World) {
   const players = playerQuery(world);
   if (players.length === 0) return;
 
@@ -225,20 +235,20 @@ function updateUI(world: any) {
   }
 
   // Make sure UI follows camera
-  statsContainer.x = gameState.camera.x + 10;
-  statsContainer.y = gameState.camera.y + 10;
+  statsContainer.x = gameState.camera.x + UI.STATS_PANEL.X_OFFSET;
+  statsContainer.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET;
 
-  healthText.x = gameState.camera.x + 20;
-  healthText.y = gameState.camera.y + 20;
+  healthText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
+  healthText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET;
 
-  speedText.x = gameState.camera.x + 20;
-  speedText.y = gameState.camera.y + 45;
+  speedText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
+  speedText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING;
 
-  damageText.x = gameState.camera.x + 20;
-  damageText.y = gameState.camera.y + 70;
+  damageText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
+  damageText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 2;
 
-  rangeText.x = gameState.camera.x + 20;
-  rangeText.y = gameState.camera.y + 95;
+  rangeText.x = gameState.camera.x + UI.TEXT.X_OFFSET;
+  rangeText.y = gameState.camera.y + UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 3;
 }
 
 // Setup input handlers
