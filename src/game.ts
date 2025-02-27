@@ -135,7 +135,7 @@ function gameLoop(ticker: Ticker): void {
 	collectibleSystem(world, delta);
 	collisionSystem(world);
 	boundarySystem(world, gameState.mapSize);
-	uiSystem(world, gameState);
+	uiSystem(world, gameState, delta); // Pass delta to UI system for notification timing
 	cameraSystem(world, gameState, app);
 	renderSystem(world, app);
 }

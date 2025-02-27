@@ -4,6 +4,7 @@ import { Player, Health, Velocity, PickupRange, Experience } from '../components
 import { UI, EXPERIENCE } from '../constants';
 import type { World, GameState } from '../types';
 import { getPlayerDamageBoost } from './collectible';
+import { ENEMY_LEVEL_REQUIREMENTS, EnemyType } from '../entities/enemy';
 
 // Define query to get player entity
 const playerQuery = defineQuery([Player, Health, Experience]);
@@ -17,6 +18,15 @@ let levelText: Text;
 let xpText: Text;
 let xpBar: Graphics;
 let statsContainer: Graphics;
+let notificationText: Text;
+
+// Track notification state
+const notifications = {
+  displayTime: 3000, // How long to show notifications (ms)
+  currentMessage: '',
+  timeRemaining: 0,
+  enemyTypesUnlocked: new Set<EnemyType>([EnemyType.NORMAL]) // Start with normal enemies unlocked
+};
 
 /**
  * Initialize UI elements
@@ -123,15 +133,56 @@ export function createUI(app: Application): void {
 	xpBar.x = UI.TEXT.X_OFFSET;
 	xpBar.y = UI.STATS_PANEL.Y_OFFSET + UI.TEXT.X_OFFSET + UI.TEXT.SPACING * 6;
 	app.stage.addChild(xpBar);
+	
+	// Notification text for displaying new enemy types
+	notificationText = new Text('', {
+		fontFamily: UI.TEXT.FONT_FAMILY,
+		fontSize: UI.TEXT.FONT_SIZE + 4,
+		fill: 0xFF9900,  // Orange for notifications
+		align: 'center',
+		stroke: 0x000000,
+		strokeThickness: 4,
+		dropShadow: true,
+		dropShadowColor: 0x000000,
+		dropShadowDistance: 2
+	});
+	notificationText.resolution = UI.TEXT.RESOLUTION;
+	notificationText.anchor.set(0.5, 0);
+	app.stage.addChild(notificationText);
+}
+
+/**
+ * Check if any new enemy types are unlocked at the current level
+ * @param level Current player level
+ */
+function checkForNewEnemyTypes(level: number): void {
+	Object.values(EnemyType).forEach(enemyType => {
+		const requiredLevel = ENEMY_LEVEL_REQUIREMENTS[enemyType];
+		
+		// If this enemy type becomes available at the current level and hasn't been shown yet
+		if (level === requiredLevel && !notifications.enemyTypesUnlocked.has(enemyType)) {
+			// Mark as unlocked
+			notifications.enemyTypesUnlocked.add(enemyType);
+			
+			// Format the enemy type name for display
+			const formattedName = enemyType.charAt(0).toUpperCase() + 
+				enemyType.slice(1).toLowerCase();
+			
+			// Set notification
+			notifications.currentMessage = `New Enemy Type Unlocked: ${formattedName}!`;
+			notifications.timeRemaining = notifications.displayTime;
+		}
+	});
 }
 
 /**
  * Update UI based on player stats and game state
  * @param world ECS world
  * @param gameState Current game state
+ * @param delta Time since last frame in milliseconds
  * @returns The updated world
  */
-export function uiSystem(world: World, gameState: GameState): World {
+export function uiSystem(world: World, gameState: GameState, delta: number): World {
 	const players = playerQuery(world);
 	if (players.length === 0) return world;
 
@@ -167,6 +218,9 @@ export function uiSystem(world: World, gameState: GameState): World {
 		levelText.text = `Level: ${level}`;
 		xpText.text = `XP: ${currentXP} / ${nextLevelXP}`;
 
+			// Check for newly unlocked enemy types
+		checkForNewEnemyTypes(level);
+
 		// Update XP progress bar to show progress from current level to next level
 		const barWidth = 200;
 		const barHeight = 10;
@@ -188,6 +242,19 @@ export function uiSystem(world: World, gameState: GameState): World {
 		xpBar.beginFill(0xFFFF00);
 		xpBar.drawRect(0, 0, barWidth * progress, barHeight);
 		xpBar.endFill();
+	}
+
+	// Update notification system
+	if (notifications.timeRemaining > 0) {
+		notifications.timeRemaining -= delta;
+		
+		// Position in the middle of the screen
+		notificationText.text = notifications.currentMessage;
+		notificationText.x = gameState.camera.x + window.innerWidth / 2;
+		notificationText.y = gameState.camera.y + 100;
+		notificationText.alpha = Math.min(1, notifications.timeRemaining / 500);
+	} else {
+		notificationText.text = '';
 	}
 
 	// Make sure UI follows camera

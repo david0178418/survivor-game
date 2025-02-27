@@ -1,10 +1,11 @@
 import { defineQuery } from 'bitecs';
 import { Position, Velocity, Player } from '../components';
-import { Enemy } from '../entities/enemy';
+import { Enemy, FastEnemy } from '../entities/enemy';
 
 // Define queries to get player and enemy entities
 const playerQuery = defineQuery([Player, Position]);
 const enemyQuery = defineQuery([Enemy, Position, Velocity]);
+const fastEnemyQuery = defineQuery([FastEnemy, Position, Velocity]);
 
 export function enemyAISystem(world: any, delta: number) {
 	// Find the player entity
@@ -20,6 +21,9 @@ export function enemyAISystem(world: any, delta: number) {
 
 	// Get all enemies
 	const enemies = enemyQuery(world);
+	// Get fast enemies (subset of all enemies)
+	const fastEnemies = fastEnemyQuery(world);
+	const fastEnemySet = new Set(fastEnemies);
 
 	// Update each enemy's movement to target the player
 	for (const enemy of enemies) {
@@ -33,11 +37,28 @@ export function enemyAISystem(world: any, delta: number) {
 
 		// Normalize the direction vector
 		const distance = Math.sqrt(dx * dx + dy * dy);
-
+		
 		if (distance > 0) {
-			// Normalize and set velocity
-			Velocity.x[enemy] = dx / distance;
-			Velocity.y[enemy] = dy / distance;
+			// Check if this is a fast enemy
+			if (fastEnemySet.has(enemy)) {
+				// Fast enemies have slight randomness in their direction
+				// This creates a more erratic movement pattern
+				const randomAngle = (Math.random() - 0.5) * 0.5; // -0.25 to 0.25 radians (±15°)
+				const cos = Math.cos(randomAngle);
+				const sin = Math.sin(randomAngle);
+				
+				// Apply rotation to direction vector
+				const rotatedDx = dx * cos - dy * sin;
+				const rotatedDy = dx * sin + dy * cos;
+				
+				// Normalize and set velocity
+				Velocity.x[enemy] = rotatedDx / distance;
+				Velocity.y[enemy] = rotatedDy / distance;
+			} else {
+				// Regular enemies move directly toward the player
+				Velocity.x[enemy] = dx / distance;
+				Velocity.y[enemy] = dy / distance;
+			}
 		}
 
 		// Apply velocity to position

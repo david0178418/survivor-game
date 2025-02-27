@@ -1,6 +1,6 @@
 import { defineQuery } from 'bitecs';
 import { Player, Position, Experience } from '../components';
-import { createEnemy } from '../entities/enemy';
+import { createEnemy, EnemyType, ENEMY_LEVEL_REQUIREMENTS } from '../entities/enemy';
 import { ENEMY_SCALING } from '../constants';
 import { getPlayerLevel } from './collectible';
 
@@ -22,6 +22,29 @@ let nextSpawnTime = (SPAWN_CONFIG.BASE_MIN_TIME + Math.random() * SPAWN_CONFIG.B
 
 // Base maximum number of enemies on screen
 const BASE_MAX_ENEMIES = 30;
+
+/**
+ * Gets all available enemy types that can spawn at the current player level
+ * 
+ * @param playerLevel Current player level
+ * @returns Array of enemy types available at this level
+ */
+function getAvailableEnemyTypes(playerLevel: number): EnemyType[] {
+  return Object.values(EnemyType).filter(
+    type => playerLevel >= ENEMY_LEVEL_REQUIREMENTS[type]
+  );
+}
+
+/**
+ * Randomly selects an enemy type from the available types
+ * 
+ * @param availableTypes Array of available enemy types
+ * @returns Selected enemy type
+ */
+function selectRandomEnemyType(availableTypes: EnemyType[]): EnemyType {
+  const index = Math.floor(Math.random() * availableTypes.length);
+  return availableTypes[index];
+}
 
 /**
  * System for spawning enemies based on player level
@@ -65,8 +88,14 @@ export function spawnSystem(world: any, delta: number, enemyCount: number) {
 
 	// Check if it's time to spawn a new enemy
 	if (timeSinceLastSpawn >= nextSpawnTime) {
-		// Spawn an enemy with level-based scaling
-		createEnemy(world, playerX, playerY, playerLevel);
+			// Get all enemy types available at current player level
+		const availableEnemyTypes = getAvailableEnemyTypes(playerLevel);
+		
+		// Randomly select an enemy type from available types
+		const selectedEnemyType = selectRandomEnemyType(availableEnemyTypes);
+		
+		// Spawn the selected enemy type
+		createEnemy(world, playerX, playerY, playerLevel, selectedEnemyType);
 
 		// Reset spawn timer
 		timeSinceLastSpawn = 0;
