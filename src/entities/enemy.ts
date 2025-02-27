@@ -5,17 +5,20 @@ import { ENEMY_SCALING } from '../constants';
 // Create Enemy components
 export const Enemy = defineComponent();
 export const FastEnemy = defineComponent();
+export const ShooterEnemy = defineComponent(); // New component for shooter enemies
 
 // Enemy type definitions for scalable enemy system
 export enum EnemyType {
   NORMAL = 'normal',
-  FAST = 'fast'
+  FAST = 'fast',
+  SHOOTER = 'shooter' // New shooter enemy type
 }
 
 // Minimum level requirements for each enemy type to spawn
 export const ENEMY_LEVEL_REQUIREMENTS = {
   [EnemyType.NORMAL]: 0, // Available from the start
   [EnemyType.FAST]: 2,   // Only appears at level 2 and above
+  [EnemyType.SHOOTER]: 3 // Only appears at level 3 and above
 };
 
 // Stats modifiers for different enemy types
@@ -40,6 +43,17 @@ export const ENEMY_STATS = {
     color: (strengthFactor: number) => {
       const red = Math.floor(0xFF * (1 - strengthFactor));
       return (red << 16) | (0xFF << 8) | 0xFF; // Primarily cyan
+    }
+  },
+  [EnemyType.SHOOTER]: {
+    baseSpeed: 0.08,   // Slower than normal enemies
+    baseHealth: 3,     // More health than normal enemies
+    baseDamage: 1,     // Less contact damage than normal enemies
+    width: 35,         // Slightly larger than normal enemies
+    height: 35,
+    color: (strengthFactor: number) => {
+      const blue = Math.floor(0xFF * (1 - strengthFactor));
+      return (0xFF << 16) | (0xA0 << 8) | blue; // Orange-yellow color
     }
   }
 };
@@ -91,6 +105,8 @@ export function createEnemy(
   addComponent(world, Enemy, enemy);
   if (type === EnemyType.FAST) {
     addComponent(world, FastEnemy, enemy);
+  } else if (type === EnemyType.SHOOTER) {
+    addComponent(world, ShooterEnemy, enemy);
   }
   
   // Add Render component

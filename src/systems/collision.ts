@@ -9,6 +9,9 @@ const projectileQuery = defineQuery([Projectile, Position, Render, Damage]);
 const enemyQuery = defineQuery([Enemy, Position, Render, Health]);
 const playerQuery = defineQuery([Player, Position, Render, Health, Experience, Invincible]);
 
+// Define a special attribute to identify enemy projectiles (by their color)
+const ENEMY_PROJECTILE_COLOR = 0xFF6600;
+
 // Drop rate for collectibles from enemies
 const COLLECTIBLE_DROP_CHANCE = 0.4; // 40% chance to drop an item
 
@@ -28,51 +31,81 @@ export function collisionSystem(world: any) {
 	// Get the current player level
 	const playerLevel = getPlayerLevel(world);
 
-	// Check projectile collisions with enemies
+	// Check projectile collisions with enemies and player
 	for (const projectile of projectiles) {
 		const projectileX = Position.x[projectile];
 		const projectileY = Position.y[projectile];
 		const projectileWidth = Render.width[projectile];
 		const projectileHeight = Render.height[projectile];
 		const projectileDamage = Damage.amount[projectile];
+		const isEnemyProjectile = Render.color[projectile] === ENEMY_PROJECTILE_COLOR;
 
-		for (const enemy of enemies) {
-			const enemyX = Position.x[enemy];
-			const enemyY = Position.y[enemy];
-			const enemyWidth = Render.width[enemy];
-			const enemyHeight = Render.height[enemy];
+		if (isEnemyProjectile) {
+			// Enemy projectiles can hit the player if they're not invincible
+			if (Invincible.duration[player] <= 0) {
+				const playerX = Position.x[player];
+				const playerY = Position.y[player];
+				const playerWidth = Render.width[player];
+				const playerHeight = Render.height[player];
 
-			// Simple AABB collision detection
-			const collisionX = Math.abs(projectileX - enemyX) < (projectileWidth + enemyWidth) / 2;
-			const collisionY = Math.abs(projectileY - enemyY) < (projectileHeight + enemyHeight) / 2;
+				// Simple AABB collision detection
+				const collisionX = Math.abs(projectileX - playerX) < (projectileWidth + playerWidth) / 2;
+				const collisionY = Math.abs(projectileY - playerY) < (projectileHeight + playerHeight) / 2;
 
-			// If collision detected
-			if (collisionX && collisionY) {
-				// Damage the enemy
-				Health.current[enemy] -= projectileDamage;
+				// If collision detected with player
+				if (collisionX && collisionY) {
+					// Damage the player
+					Health.current[player] -= projectileDamage;
 
-				// Destroy the projectile
-				removeEntity(world, projectile);
+					// Start invincibility timer
+					Invincible.duration[player] = INVINCIBILITY_DURATION;
 
-				// Check if enemy died
-				if (Health.current[enemy] <= 0) {
-					// Save position before destroying enemy
-					const enemyPosX = Position.x[enemy];
-					const enemyPosY = Position.y[enemy];
-
-					// Destroy the enemy
-					removeEntity(world, enemy);
-
-					// Chance to spawn a collectible at the enemy's position
-					if (Math.random() < COLLECTIBLE_DROP_CHANCE) {
-						const collectibleType = getRandomCollectibleType();
-						const isLarge = shouldBeLargeCollectible(playerLevel);
-						createCollectible(world, enemyPosX, enemyPosY, collectibleType, isLarge);
-					}
+					// Destroy the projectile
+					removeEntity(world, projectile);
+					
+					// Skip to next projectile after hitting player
+					continue;
 				}
+			}
+		} else {
+			// Player projectiles can hit enemies
+			for (const enemy of enemies) {
+				const enemyX = Position.x[enemy];
+				const enemyY = Position.y[enemy];
+				const enemyWidth = Render.width[enemy];
+				const enemyHeight = Render.height[enemy];
 
-				// Only one collision per projectile
-				break;
+				// Simple AABB collision detection
+				const collisionX = Math.abs(projectileX - enemyX) < (projectileWidth + enemyWidth) / 2;
+				const collisionY = Math.abs(projectileY - enemyY) < (projectileHeight + enemyHeight) / 2;
+
+				// If collision detected
+				if (collisionX && collisionY) {
+					// Damage the enemy
+					Health.current[enemy] -= projectileDamage;
+
+					// Destroy the projectile
+					removeEntity(world, projectile);
+
+					// Check if enemy died
+					if (Health.current[enemy] <= 0) {
+						// Save position before destroying enemy
+						const enemyPosX = Position.x[enemy];
+						const enemyPosY = Position.y[enemy];
+
+						// Destroy the enemy
+						removeEntity(world, enemy);
+
+						// Chance to spawn a collectible at the enemy's position
+						if (Math.random() < COLLECTIBLE_DROP_CHANCE) {
+							const collectibleType = getRandomCollectibleType();
+							const isLarge = shouldBeLargeCollectible(playerLevel);
+							createCollectible(world, enemyPosX, enemyPosY, collectibleType, isLarge);
+						}
+					}
+					// Only one collision per projectile
+					break;
+				}
 			}
 		}
 	}
