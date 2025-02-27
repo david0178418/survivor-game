@@ -17,7 +17,7 @@
 		Create a new file for every entity in a directory called `entities`.<br/>
 		Keep in mind that PIXI apps are initialized with the following:<br/>
 		<code>const app = new Application();<br/>
-		await app.init(...);</code>
+await app.init(...);</code>
 	</summary>
 
 	## Response
