@@ -2,6 +2,9 @@
 
 ***Copilot Edits Agent Mode w/ claude-3.5-sonnet***
 
+[commit 3c97222
+](https://github.com/david0178418/survivor-game/commit/3c97222df16a965ea975300fad4b5654730a2942)
+
 ## Prompt 1
 
 <details>

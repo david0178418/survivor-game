@@ -102,3 +102,21 @@ export const Experience = defineComponent({
 export const Invincible = defineComponent({
 	duration: Types.f32  // How long invincibility lasts in ms
 });
+
+// Weapon component - for tracking weapon data
+export const Weapon = defineComponent({
+	type: Types.ui8,  // 0 = projectile (default), 1 = sword, etc.
+	level: Types.ui8,  // Weapon level (upgrades)
+	cooldown: Types.f32,  // Current cooldown time remaining
+	baseCooldown: Types.f32  // Base cooldown time between attacks
+});
+
+// Sword component - for sword-specific properties
+export const Sword = defineComponent({
+	angle: Types.f32,  // Current angle of swing (radians)
+	swingSpeed: Types.f32,  // Speed of the swing
+	swingArc: Types.f32,  // Arc angle of the swing (radians)
+	range: Types.f32,  // Range of the sword
+	active: Types.ui8,  // Whether the sword is currently swinging (1) or not (0)
+	lifeTime: Types.f32  // How long the current swing lasts
+});

@@ -7,7 +7,7 @@ import { boundarySystem } from './systems/boundary';
 import { renderSystem } from './systems/render';
 import { spawnSystem } from './systems/spawn';
 import { enemyAISystem } from './systems/enemyAI';
-import { shootingSystem } from './systems/shooting';
+import { weaponSystem } from './systems/weapon';
 import { collisionSystem, isPlayerDead } from './systems/collision';
 import { collectibleSystem } from './systems/collectible';
 import { createUI, uiSystem } from './systems/ui';
@@ -145,7 +145,7 @@ function gameLoop(ticker: Ticker) {
 
 	// Run systems with their required parameters
 	movementSystem(world, { gameState, delta });
-	shootingSystem(world, { delta });
+	weaponSystem(world, { delta }); // Using new weapon system instead of shooting system
 	spawnSystem(world, { delta, enemyCount });
 	enemyAISystem(world, { delta });
 	collectibleSystem(world, { delta });

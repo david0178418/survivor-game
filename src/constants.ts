@@ -1,3 +1,4 @@
+// filepath: /home/dgranado/PersonalProjects/test-apps/survivor-game/src/constants.ts
 // Game map settings
 export const MAP = {
 	WIDTH: 2000,
@@ -96,5 +97,44 @@ export const UI = {
 		RESOLUTION: 2,
 		SPACING: 25,
 		X_OFFSET: 20
+	}
+};
+
+// Weapon types and constants
+export enum WeaponType {
+	PROJECTILE = 0,
+	SWORD = 1
+}
+
+// Weapon level requirements (which player level unlocks the weapon)
+export const WEAPON_LEVEL_REQUIREMENTS = {
+	[WeaponType.PROJECTILE]: 0, // Available from the start
+	[WeaponType.SWORD]: 2      // Unlocked at player level 2
+};
+
+// Weapon constants
+export const WEAPONS = {
+	// Base projectile weapon
+	[WeaponType.PROJECTILE]: {
+		COOLDOWN: 1250,       // 1.25 seconds between shots
+		DAMAGE: 1,           // Base damage
+		RANGE: 450,          // Maximum targeting range
+		COLOR: 0x0000FF,     // Blue
+		WIDTH: 15,
+		HEIGHT: 15,
+		SPEED: 1.0,          // Movement speed
+		LIFETIME: 2000       // 2 seconds before disappearing
+	},
+	// Sword weapon
+	[WeaponType.SWORD]: {
+		COOLDOWN: 1000,      // 1 second between swings
+		DAMAGE: 2,           // Base damage (higher than projectile)
+		RANGE: 100,          // Swing range
+		COLOR: 0xC0C0C0,     // Silver/Gray
+		WIDTH: 60,           // Length of sword
+		HEIGHT: 8,           // Width of sword (reduced from 15 to 8)
+		SWING_ARC: Math.PI / 2,  // 90 degree arc (changed from 180 to 90 degrees)
+		SWING_SPEED: 0.25,    // Radians per frame (slightly increased for faster swings)
+		LIFETIME: 400        // 0.4 seconds for a complete swing
 	}
 };
