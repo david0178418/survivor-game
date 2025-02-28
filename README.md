@@ -25,3 +25,4 @@ And I game dev expriment. Implementing a simple Brotato-style game using bitECS 
 	- [Damage Invincibility Window](./conversations/conversation-8-6de16ed.md)
 	- [Enemy Types](./conversations/conversation-9.md)
 	- [Refactor](./conversations/conversation-10.md)
+	- [Add Sword](./conversations/conversation-11-225951f.md)
